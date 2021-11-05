@@ -55,6 +55,55 @@ def fair_forward_2(P_privileged, P_protected):
 
     return loss
 
+class SimpleMLP(Transformer):
+
+    def __init__(self, sensitive_attr='',
+                 hidden_sizes=[32, 64, 32],
+                 num_epochs=10, batch_size=64):
+
+        self.model = None
+        self.hidden_sizes = hidden_sizes
+        self.input_shape = None
+        self.num_classes = 2
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.sensitive_attr = sensitive_attr
+        self.classes_ = None
+
+    def _compile_model(self):
+        self.model = Sequential()
+        self.model.add(InputLayer(input_shape=self.input_shape))
+        self.model.add(Dropout(0.1))
+
+        for hidden_size in self.hidden_sizes:
+            self.model.add(Dense(hidden_size, activation='relu'))
+
+        self.model.add(Dense(self.num_classes, activation="softmax"))
+        self.model.compile(optimizer='adam',
+                           loss=binary_crossentropy)
+    def fit(self, dataset):
+        if self.model is None:
+            self.input_shape = dataset.features.shape[1]
+            self._compile_model()
+            self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
+
+        X = dataset.features
+        y_expanded = np.zeros( shape=(X.shape[0], 2) )
+
+        y_expanded[:,0] = (dataset.labels == dataset.unfavorable_label).reshape(X.shape[0]).astype(int)
+        y_expanded[:,1] = (dataset.labels == dataset.favorable_label).reshape(X.shape[0]).astype(int)
+
+        self.model.fit(X, y_expanded, epochs=self.num_epochs, batch_size=self.batch_size, verbose=False)
+
+        return self
+
+    def predict_proba(self, X):
+        return self.model.predict(X)
+
+    def predict(self, X):
+        logits = self.predict_proba(X)
+        return np.argmax(logits, axis=1)
+
 class FairMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
@@ -73,7 +122,7 @@ class FairMLP(Transformer):
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.sensitive_attr = sensitive_attr
-        self.classes_ =  np.array([0, 1])
+        self.classes_ = None
 
     def _compile_model(self):
         self.model = Sequential()
@@ -85,12 +134,12 @@ class FairMLP(Transformer):
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
         self.model.compile(optimizer='adam',
-                           #loss=fair_forward_2(self.p_privileged, self.p_protected))
-                           loss=binary_crossentropy, metrics=['accuracy'])
+                           loss=fair_forward_2(self.p_privileged, self.p_protected))
     def fit(self, dataset):
         if self.model is None:
             self.input_shape = dataset.features.shape[1]
             self._compile_model()
+            self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
 
         X = dataset.features
         y_expanded = np.zeros( shape=(X.shape[0], 4) )
@@ -101,8 +150,9 @@ class FairMLP(Transformer):
         y_expanded[:,2] = (dataset.labels == dataset.unfavorable_label).reshape(X.shape[0]).astype(int)
         y_expanded[:,3] = (dataset.labels == dataset.favorable_label).reshape(X.shape[0]).astype(int)
 
-        #self.model.summary()
-        self.model.fit(X, y_expanded[:,-2:], epochs=self.num_epochs, batch_size=self.batch_size, verbose=False)
+        self.model.fit(X, y_expanded, epochs=self.num_epochs, batch_size=self.batch_size, verbose=False)
+
+        return self
 
     def predict_proba(self, X):
         return self.model.predict(X)

@@ -35,19 +35,19 @@ def describe_metrics(metrics, thresh_arr):
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind'][best_ind]))
 
 
-def test(dataset, model, thresh_arr, unprivileged_groups, privileged_groups):
+def eval_model(model, dataset, thresh_arr, unprivileged_groups, privileged_groups):
     try:
         # sklearn classifier
-        y_val_pred_prob = model.predict_proba(dataset.features)
+        y_pred_prob = model.predict_proba(dataset.features)
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
     except AttributeError:
         # aif360 inprocessing algorithm
-        y_val_pred_prob = model.predict(dataset).scores
+        y_pred_prob = model.predict(dataset).scores
         pos_ind = 0
 
     metric_arrs = defaultdict(list)
     for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, pos_ind] > thresh).astype(np.float64)
+        y_val_pred = (y_pred_prob[:, pos_ind] > thresh).astype(np.float64)
 
         dataset_pred = dataset.copy()
         dataset_pred.labels = y_val_pred
@@ -65,3 +65,4 @@ def test(dataset, model, thresh_arr, unprivileged_groups, privileged_groups):
         metric_arrs['theil_ind'].append(metric.theil_index())
 
     return metric_arrs
+

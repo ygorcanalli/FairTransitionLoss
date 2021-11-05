@@ -11,8 +11,8 @@ from aif360.metrics import ClassificationMetric
 from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover
 # Fair loss
-from forward import FairMLP
-
+from models import FairMLP, SimpleMLP
+from util import eval_model
 
 label_map = {1.0: '>50K', 0.0: '<=50K'}
 protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
@@ -35,6 +35,7 @@ privileged_groups = [{sens_attr: v} for v in
 
 describe(dataset_train, dataset_val, dataset_test)
 
+
 def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_groups):
     # training
     model = make_pipeline(StandardScaler(),
@@ -45,59 +46,19 @@ def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_g
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    y_val_pred_prob = model.predict_proba(val.features)
-    val_pos_ind = np.where(model.classes_ == val.favorable_label)[0][0]
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    y_test_pred_prob = model.predict_proba(test.features)
-    test_pos_ind = np.where(model.classes_ == test.favorable_label)[0][0]
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Logistc Regression - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
 def eval_random_forest(train, val, test, unprivileged_groups, privileged_groups):
     # training
     model = make_pipeline(StandardScaler(),
@@ -108,59 +69,19 @@ def eval_random_forest(train, val, test, unprivileged_groups, privileged_groups)
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    y_val_pred_prob = model.predict_proba(val.features)
-    val_pos_ind = np.where(model.classes_ == val.favorable_label)[0][0]
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    y_test_pred_prob = model.predict_proba(test.features)
-    test_pos_ind = np.where(model.classes_ == test.favorable_label)[0][0]
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Random Forest - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
 def eval_logistic_regression_reweighting(train, val, test, unprivileged_groups, privileged_groups):
     # training
     RW = Reweighing(unprivileged_groups=unprivileged_groups,
@@ -175,59 +96,19 @@ def eval_logistic_regression_reweighting(train, val, test, unprivileged_groups, 
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    y_val_pred_prob = model.predict_proba(val.features)
-    val_pos_ind = np.where(model.classes_ == val.favorable_label)[0][0]
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    y_test_pred_prob = model.predict_proba(test.features)
-    test_pos_ind = np.where(model.classes_ == test.favorable_label)[0][0]
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Logistic Regression + Reweighing - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
 def eval_random_forest_reweighting(train, val, test, unprivileged_groups, privileged_groups):
     # training
     RW = Reweighing(unprivileged_groups=unprivileged_groups,
@@ -242,205 +123,119 @@ def eval_random_forest_reweighting(train, val, test, unprivileged_groups, privil
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    y_val_pred_prob = model.predict_proba(val.features)
-    val_pos_ind = np.where(model.classes_ == val.favorable_label)[0][0]
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    y_test_pred_prob = model.predict_proba(test.features)
-    test_pos_ind = np.where(model.classes_ == test.favorable_label)[0][0]
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Random Forest + Reweighing - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
 def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_groups):
     # training
     model = PrejudiceRemover(sensitive_attr=sens_attr, eta=25.0)
-    pr_orig_scaler = StandardScaler()
+    scaler = StandardScaler()
 
-    dataset = train.copy()
-    dataset.features = pr_orig_scaler.fit_transform(dataset.features)
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
 
-    model = model.fit(dataset)
+    scaled_val = val.copy()
+    scaled_test = test.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+    scaled_test.features = scaler.fit_transform(scaled_test.features)
+
+    model = model.fit(scaled_train)
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    dataset = val.copy()
-    y_val_pred_prob = model.predict(dataset).scores
-    val_pos_ind = 0
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    dataset = test.copy()
-    dataset.features = pr_orig_scaler.transform(dataset.features)
-    y_test_pred_prob = model.predict(dataset).scores
-    test_pos_ind = 0
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Prejudice Remover - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
 def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups):
     # training
     model = FairMLP(sensitive_attr=sens_attr,
                     hidden_sizes=[16, 32],
                     batch_size=32,
                     privileged_demotion=0.0, privileged_promotion=0.0,
-                    protected_demotion=0.0, protected_promotion=0.0,)
-    pr_orig_scaler = StandardScaler()
+                    protected_demotion=0.0, protected_promotion=0.0, )
+    scaler = StandardScaler()
 
-    dataset = train.copy()
-    dataset.features = pr_orig_scaler.fit_transform(dataset.features)
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
 
-    model.fit(dataset)
+    scaled_val = val.copy()
+    scaled_test = test.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+    scaled_test.features = scaler.fit_transform(scaled_test.features)
+
+    model = model.fit(scaled_train)
 
     # hyperparameter tunning in validation set
     thresh_arr = np.linspace(0.01, 0.5, 50)
-    dataset = val.copy()
-    y_val_pred_prob = model.predict_proba(dataset.features)
-    val_pos_ind = 1
-
-    val_metrics = defaultdict(list)
-    for thresh in thresh_arr:
-        y_val_pred = (y_val_pred_prob[:, val_pos_ind] > thresh).astype(np.float64)
-
-        dataset_pred = val.copy()
-        dataset_pred.labels = y_val_pred
-        metric = ClassificationMetric(
-            val, dataset_pred,
-            unprivileged_groups=unprivileged_groups,
-            privileged_groups=privileged_groups)
-
-        val_metrics['bal_acc'].append((metric.true_positive_rate()
-                                       + metric.true_negative_rate()) / 2)
-        val_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-        val_metrics['disp_imp'].append(metric.disparate_impact())
-        val_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-        val_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-        val_metrics['theil_ind'].append(metric.theil_index())
-
+    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
-
-    # evalutate on test set
-    dataset = test.copy()
-    dataset.features = pr_orig_scaler.transform(dataset.features)
-    y_test_pred_prob = model.predict_proba(dataset.features)
-    test_pos_ind = 1
-
-    best_thresh = thresh_arr[best_ind]
-    y_test_pred = (y_test_pred_prob[:, test_pos_ind] > best_thresh).astype(np.float64)
-
-    test_metrics = defaultdict(list)
-    dataset_pred = test.copy()
-    dataset_pred.labels = y_test_pred
-    metric = ClassificationMetric(
-        test, dataset_pred,
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups)
-
-    test_metrics['bal_acc'].append((metric.true_positive_rate()
-                                   + metric.true_negative_rate()) / 2)
-    test_metrics['avg_odds_diff'].append(metric.average_odds_difference())
-    test_metrics['disp_imp'].append(metric.disparate_impact())
-    test_metrics['stat_par_diff'].append(metric.statistical_parity_difference())
-    test_metrics['eq_opp_diff'].append(metric.equal_opportunity_difference())
-    test_metrics['theil_ind'].append(metric.theil_index())
+    # eval 0n test set
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Fair Loss MLP - Test metrics')
     print('-----------------------------------')
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
+
+
+def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
+    # training
+    model = SimpleMLP(sensitive_attr=sens_attr,
+                      hidden_sizes=[16, 32],
+                      batch_size=32)
+    scaler = StandardScaler()
+
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_test = test.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+    scaled_test.features = scaler.fit_transform(scaled_test.features)
+
+    model = model.fit(scaled_train)
+
+    # hyperparameter tunning in validation set
+    thresh_arr = np.linspace(0.01, 0.5, 50)
+    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
+    # best solution
+    best_ind = np.argmax(val_metrics['bal_acc'])
+    # eval 0n test set
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
+
+    print('-----------------------------------')
+    print('Simple MLP - Test metrics')
+    print('-----------------------------------')
+    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    print('-----------------------------------')
+
+
+eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_fair_loss_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_logistic_regression(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_random_forest(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_logistic_regression_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_random_forest_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_prejudice_remover(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-
-
-
