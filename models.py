@@ -134,7 +134,7 @@ class FairMLP(Transformer):
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
         self.model.compile(optimizer='adam',
-                           loss=fair_forward_2(self.p_privileged, self.p_protected))
+                           loss=fair_forward(self.p_privileged, self.p_protected))
     def fit(self, dataset):
         if self.model is None:
             self.input_shape = dataset.features.shape[1]

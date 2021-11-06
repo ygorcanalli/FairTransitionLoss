@@ -24,8 +24,10 @@ def describe(train=None, val=None, test=None):
 
 def describe_metrics(metrics, thresh_arr):
     best_ind = np.argmax(metrics['bal_acc'])
+
     print("Threshold corresponding to Best balanced accuracy: {:6.4f}".format(thresh_arr[best_ind]))
     print("Best balanced accuracy: {:6.4f}".format(metrics['bal_acc'][best_ind]))
+    print("overall accuracy: {:6.4f}".format(metrics['overall_acc'][best_ind]))
 #     disp_imp_at_best_ind = np.abs(1 - np.array(metrics['disp_imp']))[best_ind]
     disp_imp_at_best_ind = 1 - min(metrics['disp_imp'][best_ind], 1/metrics['disp_imp'][best_ind])
     print("Corresponding 1-min(DI, 1/DI) value: {:6.4f}".format(disp_imp_at_best_ind))
@@ -56,6 +58,7 @@ def eval_model(model, dataset, thresh_arr, unprivileged_groups, privileged_group
                 unprivileged_groups=unprivileged_groups,
                 privileged_groups=privileged_groups)
 
+        metric_arrs['overall_acc'].append(  metric.accuracy() )
         metric_arrs['bal_acc'].append((metric.true_positive_rate()
                                      + metric.true_negative_rate()) / 2)
         metric_arrs['avg_odds_diff'].append(metric.average_odds_difference())

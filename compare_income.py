@@ -171,8 +171,9 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
     model = FairMLP(sensitive_attr=sens_attr,
                     hidden_sizes=[16, 32],
                     batch_size=32,
-                    privileged_demotion=0.0, privileged_promotion=0.0,
-                    protected_demotion=0.0, protected_promotion=0.0, )
+                    privileged_demotion=0.77, privileged_promotion=0.22,
+                    protected_demotion=0.32, protected_promotion=0.03)
+
     scaler = StandardScaler()
 
     scaled_train = train.copy()
@@ -191,8 +192,8 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
     # eval 0n test set
-    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
-
+    #test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
+    test_metrics = eval_model(model, scaled_test, [0.5], unprivileged_groups, privileged_groups)
     print('-----------------------------------')
     print('Fair Loss MLP - Test metrics')
     print('-----------------------------------')
@@ -231,9 +232,8 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
     describe_metrics(test_metrics, [thresh_arr[best_ind]])
     print('-----------------------------------')
 
-
-eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_fair_loss_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
+eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_logistic_regression(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_random_forest(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
 eval_logistic_regression_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
