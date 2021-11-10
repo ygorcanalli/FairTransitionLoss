@@ -11,7 +11,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 # Bias mitigation techniques
 from aif360.algorithms.preprocessing import Reweighing
-from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing
+from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 # Fair loss
 from models import FairMLP, SimpleMLP
 from util import eval_model, plot_comparison
@@ -180,6 +180,37 @@ def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_gro
     print('-----------------------------------')
     return best_metrics
 
+def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups):
+    # training
+    model = MetaFairClassifier(sensitive_attr=sens_attr)
+    scaler = StandardScaler()
+
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_test = test.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+    scaled_test.features = scaler.fit_transform(scaled_test.features)
+
+    model = model.fit(scaled_train)
+
+    # hyperparameter tunning in validation set
+    thresh_arr = np.linspace(0.01, 0.5, 50)
+    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
+    # best solution
+    best_ind = np.argmax(val_metrics['bal_acc'])
+    # eval 0n test set
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
+
+    print('-----------------------------------')
+    print('Meta Fair Classifier - Test metrics')
+    print('-----------------------------------')
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'meta_fair_classifier'
+    print('-----------------------------------')
+    return best_metrics
+
 
 def eval_adversarial_debiasing(train, val, test, unprivileged_groups, privileged_groups):
     # training
@@ -295,7 +326,8 @@ functions = [
     eval_logistic_regression_reweighting,
     eval_random_forest_reweighting,
     eval_prejudice_remover,
-    eval_adversarial_debiasing
+    eval_adversarial_debiasing,
+    eval_meta_fair_classifier
 ]
 
 results = []
