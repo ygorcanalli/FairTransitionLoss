@@ -1,5 +1,7 @@
 import numpy as np
 from collections import defaultdict
+
+import pandas as pd
 from aif360.datasets import AdultDataset
 from util import describe, describe_metrics
 from sklearn.linear_model import LogisticRegression
@@ -13,6 +15,7 @@ from aif360.algorithms.inprocessing import PrejudiceRemover
 # Fair loss
 from models import FairMLP, SimpleMLP
 from util import eval_model
+import matplotlib.pyplot as plt
 
 label_map = {1.0: '>50K', 0.0: '<=50K'}
 protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
@@ -55,8 +58,10 @@ def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_g
     print('-----------------------------------')
     print('Logistc Regression - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'logistic_regression'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_random_forest(train, val, test, unprivileged_groups, privileged_groups):
@@ -78,8 +83,10 @@ def eval_random_forest(train, val, test, unprivileged_groups, privileged_groups)
     print('-----------------------------------')
     print('Random Forest - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'random_forest'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_logistic_regression_reweighting(train, val, test, unprivileged_groups, privileged_groups):
@@ -105,8 +112,10 @@ def eval_logistic_regression_reweighting(train, val, test, unprivileged_groups, 
     print('-----------------------------------')
     print('Logistic Regression + Reweighing - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'logistic_regression_rw'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_random_forest_reweighting(train, val, test, unprivileged_groups, privileged_groups):
@@ -132,8 +141,10 @@ def eval_random_forest_reweighting(train, val, test, unprivileged_groups, privil
     print('-----------------------------------')
     print('Random Forest + Reweighing - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'random_forest_rw'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_groups):
@@ -162,8 +173,10 @@ def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_gro
     print('-----------------------------------')
     print('Prejudice Remover - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'prejudice_remover'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups):
@@ -197,8 +210,10 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
     print('-----------------------------------')
     print('Fair Loss MLP - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'fair_loss_mlp'
     print('-----------------------------------')
+    return best_metrics
 
 
 def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
@@ -224,18 +239,33 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
     # eval 0n test set
-    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
+    test_metrics = eval_model(model, scaled_test, [0.5], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Simple MLP - Test metrics')
     print('-----------------------------------')
-    describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'mlp'
     print('-----------------------------------')
+    return best_metrics
 
-eval_fair_loss_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_logistic_regression(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_random_forest(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_logistic_regression_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_random_forest_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
-eval_prejudice_remover(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups)
+results = []
+
+results.append(eval_fair_loss_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_logistic_regression(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_random_forest(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_logistic_regression_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_random_forest_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+results.append(eval_prejudice_remover(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+
+results_df = pd.DataFrame(results)
+print(results_df)
+fig, axis = plt.subplots(2,1,figsize=(14, 12), sharex=True)
+fig.suptitle("Comparação de Métricas em Fairness", fontsize=16)
+axis[0] = results_df[['overall_acc', 'bal_acc', 'disp_imp','method']]\
+    .plot.bar(x='method', rot=0, ax=axis[0], grid=True)
+axis[1] = results_df[['avg_odds_diff', 'stat_par_diff', 'eq_opp_diff','theil_ind','method']]\
+    .plot.bar(x='method', rot=0, ax=axis[1], grid=True)
+fig.tight_layout()
+fig.show()

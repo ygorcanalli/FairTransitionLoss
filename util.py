@@ -36,6 +36,18 @@ def describe_metrics(metrics, thresh_arr):
     print("Corresponding equal opportunity difference value: {:6.4f}".format(metrics['eq_opp_diff'][best_ind]))
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind'][best_ind]))
 
+    best_metrics = {
+        'overall_acc': abs(metrics['overall_acc'][best_ind]),
+        'bal_acc': abs(metrics['bal_acc'][best_ind]),
+        'disp_imp': abs(disp_imp_at_best_ind),
+        'avg_odds_diff': abs(metrics['avg_odds_diff'][best_ind]),
+        'stat_par_diff': abs(metrics['stat_par_diff'][best_ind]),
+        'eq_opp_diff': abs(metrics['eq_opp_diff'][best_ind]),
+        'theil_ind': abs(metrics['theil_ind'][best_ind])
+    }
+
+    return best_metrics
+
 
 def eval_model(model, dataset, thresh_arr, unprivileged_groups, privileged_groups):
     try:
