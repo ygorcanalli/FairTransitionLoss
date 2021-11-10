@@ -1,21 +1,23 @@
 import numpy as np
+from matplotlib import cm
 from collections import defaultdict
 
-import pandas as pd
+
 from aif360.datasets import AdultDataset
 from util import describe, describe_metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from aif360.metrics import ClassificationMetric
 # Bias mitigation techniques
 from aif360.algorithms.preprocessing import Reweighing
-from aif360.algorithms.inprocessing import PrejudiceRemover
+from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing
 # Fair loss
 from models import FairMLP, SimpleMLP
-from util import eval_model
-import matplotlib.pyplot as plt
+from util import eval_model, plot_comparison
+
+
+import tensorflow.compat.v1 as tf_old
 
 label_map = {1.0: '>50K', 0.0: '<=50K'}
 protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
@@ -179,6 +181,41 @@ def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_gro
     return best_metrics
 
 
+def eval_adversarial_debiasing(train, val, test, unprivileged_groups, privileged_groups):
+    # training
+    tf_old.disable_eager_execution()
+    model = AdversarialDebiasing(unprivileged_groups=unprivileged_groups,
+                                 privileged_groups=privileged_groups,
+                                 scope_name='adv_debias',
+                                 sess=tf_old.Session())
+    scaler = StandardScaler()
+
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_test = test.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+    scaled_test.features = scaler.fit_transform(scaled_test.features)
+
+    model = model.fit(scaled_train)
+
+    # hyperparameter tunning in validation set
+    thresh_arr = np.linspace(0.01, 0.5, 50)
+    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
+    # best solution
+    best_ind = np.argmax(val_metrics['bal_acc'])
+    # eval 0n test set
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
+
+    print('-----------------------------------')
+    print('Adversarial Debiasing - Test metrics')
+    print('-----------------------------------')
+    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics['method'] = 'adversarial_debiasing'
+    print('-----------------------------------')
+    return best_metrics
+
 def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups):
     # training
     model = FairMLP(sensitive_attr=sens_attr,
@@ -249,23 +286,22 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
     print('-----------------------------------')
     return best_metrics
 
+
+functions = [
+    eval_fair_loss_mlp,
+    eval_simple_mlp,
+    eval_logistic_regression,
+    eval_random_forest,
+    eval_logistic_regression_reweighting,
+    eval_random_forest_reweighting,
+    eval_prejudice_remover,
+    eval_adversarial_debiasing
+]
+
 results = []
 
-results.append(eval_fair_loss_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_simple_mlp(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_logistic_regression(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_random_forest(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_logistic_regression_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_random_forest_reweighting(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
-results.append(eval_prejudice_remover(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+for eval in functions:
+    results.append(eval(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups))
+    plot_comparison(results)
 
-results_df = pd.DataFrame(results)
-print(results_df)
-fig, axis = plt.subplots(2,1,figsize=(14, 12), sharex=True)
-fig.suptitle("Comparação de Métricas em Fairness", fontsize=16)
-axis[0] = results_df[['overall_acc', 'bal_acc', 'disp_imp','method']]\
-    .plot.bar(x='method', rot=0, ax=axis[0], grid=True)
-axis[1] = results_df[['avg_odds_diff', 'stat_par_diff', 'eq_opp_diff','theil_ind','method']]\
-    .plot.bar(x='method', rot=0, ax=axis[1], grid=True)
-fig.tight_layout()
-fig.show()
+

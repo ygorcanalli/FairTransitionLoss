@@ -1,7 +1,9 @@
 from collections import defaultdict
 from aif360.metrics import ClassificationMetric
+import matplotlib.pyplot as plt
 
 import numpy as np
+import pandas as pd
 
 def describe(train=None, val=None, test=None):
     if train is not None:
@@ -40,10 +42,11 @@ def describe_metrics(metrics, thresh_arr):
         'overall_acc': abs(metrics['overall_acc'][best_ind]),
         'bal_acc': abs(metrics['bal_acc'][best_ind]),
         'disp_imp': abs(disp_imp_at_best_ind),
+        #'disp_imp': abs(metrics['disp_imp'][best_ind]),
         'avg_odds_diff': abs(metrics['avg_odds_diff'][best_ind]),
         'stat_par_diff': abs(metrics['stat_par_diff'][best_ind]),
-        'eq_opp_diff': abs(metrics['eq_opp_diff'][best_ind]),
-        'theil_ind': abs(metrics['theil_ind'][best_ind])
+        'eq_opp_diff': abs(metrics['eq_opp_diff'][best_ind])
+        #'theil_ind': abs(metrics['theil_ind'][best_ind])
     }
 
     return best_metrics
@@ -81,3 +84,37 @@ def eval_model(model, dataset, thresh_arr, unprivileged_groups, privileged_group
 
     return metric_arrs
 
+def plot_comparison(results):
+    results_df = pd.DataFrame(results)
+    my_cmap = plt.cm.get_cmap('Dark2')
+    n_bars = len(results_df.keys()) - 1
+    colors = my_cmap([x for x in range(n_bars)])
+    print(results_df)
+    fig, axis = plt.subplots(3, 1, figsize=(14, 12), sharex=True,
+                             gridspec_kw={'height_ratios': [1, 2, 2]})
+    fig.suptitle("Comparação de Métricas em Fairness", fontsize=16)
+    axis[0].axis('off')
+    axis[1] = results_df[['overall_acc', 'bal_acc', 'disp_imp', 'method']] \
+        .plot.bar(x='method', rot=0, ax=axis[1], grid=True, legend=False, color=colors[:3])
+    axis[2] = results_df[['avg_odds_diff', 'stat_par_diff', 'eq_opp_diff', 'method']] \
+        .plot.bar(x='method', rot=0, ax=axis[2], grid=True, legend=False, color=colors[3:])
+    bars_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
+    bars, labels = [sum(lol, []) for lol in zip(*bars_labels)]
+    metric_explain = get_metric_explain()
+    labels = [metric_explain[label] for label in labels]
+    fig.legend(bars, labels,
+               loc='lower left', bbox_to_anchor=(0.03, 0.78),
+               fancybox=True, shadow=False, ncol=1,
+               fontsize='x-large')
+    fig.tight_layout()
+    fig.show()
+
+def get_metric_explain():
+    return {
+        'overall_acc': 'Accuracy - acurácia padrão',
+        'bal_acc': 'Balanced Accuracy - média entre taxa de verdadeiros positivos e verdadeiros negativos',
+        'avg_odds_diff': 'Average Odds Difference - diferença de verdadeiros e falsos positivos dentre os grupos',
+        'disp_imp': 'Disparate Impact - razão de previsões positivas dentre os grupos',
+        'stat_par_diff': 'Statistical Parity Difference - diferença de previsões positivas dentre os grupos',
+        'eq_opp_diff': 'Equalized Odds Difference - diferença de verdadeiros positivos dentre os grupos'
+    }
