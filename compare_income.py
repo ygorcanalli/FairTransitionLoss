@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import cm
 from collections import defaultdict
+from multiprocessing import Pool
+import os
 
 
 from aif360.datasets import AdultDataset
@@ -14,7 +16,15 @@ from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 # Fair loss
 from models import FairMLP, SimpleMLP
-from util import eval_model, plot_comparison
+from util import eval_model, plot_comparison, get_ga_instance, fitness_rule_a, fitness_rule_b, fitness_rule_c
+
+
+import time
+from multiprocessing import Pool
+
+device = 'cpu'
+if device == 'cpu':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 import tensorflow.compat.v1 as tf_old
@@ -182,7 +192,7 @@ def eval_prejudice_remover(train, val, test, unprivileged_groups, privileged_gro
 
 def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups):
     # training
-    model = MetaFairClassifier(sensitive_attr=sens_attr)
+    model = MetaFairClassifier(sensitive_attr=sens_attr, type="sr")
     scaler = StandardScaler()
 
     scaled_train = train.copy()
@@ -249,36 +259,60 @@ def eval_adversarial_debiasing(train, val, test, unprivileged_groups, privileged
 
 def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups):
     # training
-    model = FairMLP(sensitive_attr=sens_attr,
-                    hidden_sizes=[16, 32],
-                    batch_size=32,
-                    privileged_demotion=0.77, privileged_promotion=0.22,
-                    protected_demotion=0.32, protected_promotion=0.03)
 
     scaler = StandardScaler()
-
     scaled_train = train.copy()
     scaled_train.features = scaler.fit_transform(scaled_train.features)
 
     scaled_val = val.copy()
     scaled_test = test.copy()
+
     scaled_val.features = scaler.fit_transform(scaled_val.features)
     scaled_test.features = scaler.fit_transform(scaled_test.features)
+    thresh_arr = [0.5]
 
-    model = model.fit(scaled_train)
 
-    # hyperparameter tunning in validation set
-    thresh_arr = np.linspace(0.01, 0.5, 50)
-    val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
-    # best solution
-    best_ind = np.argmax(val_metrics['bal_acc'])
-    # eval 0n test set
-    #test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
-    test_metrics = eval_model(model, scaled_test, [0.5], unprivileged_groups, privileged_groups)
+    def fitness_function(solution, solution_idx):
+        model = FairMLP(sensitive_attr=sens_attr,
+                        hidden_sizes=[16, 32],
+                        batch_size=32,
+                        privileged_demotion=solution[0], privileged_promotion=solution[1],
+                        protected_demotion=solution[2], protected_promotion=solution[3])
+
+        model = model.fit(scaled_train)
+        val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
+        best_metrics = describe_metrics(val_metrics, thresh_arr)
+
+        fitness = fitness_rule_c(best_metrics)
+        print('Fitness', fitness)
+        print('-----------------------')
+        return fitness
+
+    ga_instance = get_ga_instance(fitness_function)
+    ga_instance.run()
+
+    solution, solution_fitness, solution_idx = ga_instance.best_solution()
+    print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=1 / solution_fitness))
+    print("Index of the best solution : {solution_idx}".format(solution_idx=solution_idx))
+
+    # After the generations complete, some plots are showed that summarize how the outputs/fitness values evolve over generations.
+    ga_instance.plot_result(title="PyGAD & Keras - Iteration vs. Fitness", linewidth=4)
+
+    best_solution = ga_instance.best_solution
+    best_model = FairMLP(sensitive_attr=sens_attr,
+                    hidden_sizes=[16, 32],
+                    batch_size=32,
+                    privileged_demotion=solution[0], privileged_promotion=solution[1],
+                    protected_demotion=solution[2], protected_promotion=solution[3])
+
+    best_model = best_model.fit(scaled_train)
+    best_model = best_model.fit(scaled_val)
+
+    test_metrics = eval_model(best_model, scaled_test, thresh_arr, unprivileged_groups, privileged_groups)
     print('-----------------------------------')
     print('Fair Loss MLP - Test metrics')
     print('-----------------------------------')
-    best_metrics = describe_metrics(test_metrics, [thresh_arr[best_ind]])
+    best_metrics = describe_metrics(test_metrics, thresh_arr)
     best_metrics['method'] = 'fair_loss_mlp'
     print('-----------------------------------')
     return best_metrics
@@ -307,7 +341,7 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
     # best solution
     best_ind = np.argmax(val_metrics['bal_acc'])
     # eval 0n test set
-    test_metrics = eval_model(model, scaled_test, [0.5], unprivileged_groups, privileged_groups)
+    test_metrics = eval_model(model, scaled_test, [thresh_arr[best_ind]], unprivileged_groups, privileged_groups)
 
     print('-----------------------------------')
     print('Simple MLP - Test metrics')
@@ -320,13 +354,13 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
 
 functions = [
     eval_fair_loss_mlp,
-    eval_simple_mlp,
-    eval_logistic_regression,
-    eval_random_forest,
-    eval_logistic_regression_reweighting,
-    eval_random_forest_reweighting,
-    eval_prejudice_remover,
-    eval_adversarial_debiasing,
+    #eval_simple_mlp,
+    #eval_logistic_regression,
+    #eval_random_forest,
+    #eval_logistic_regression_reweighting,
+    #eval_random_forest_reweighting,
+    #eval_prejudice_remover,
+    #eval_adversarial_debiasing,
     eval_meta_fair_classifier
 ]
 

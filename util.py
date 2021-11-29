@@ -1,9 +1,13 @@
 from collections import defaultdict
 from aif360.metrics import ClassificationMetric
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
+
+import pygad
+
 
 def describe(train=None, val=None, test=None):
     if train is not None:
@@ -118,3 +122,60 @@ def get_metric_explain():
         'stat_par_diff': 'Statistical Parity Difference - diferença de previsões positivas dentre os grupos',
         'eq_opp_diff': 'Equalized Odds Difference - diferença de verdadeiros positivos dentre os grupos'
     }
+
+def fitness_rule_a(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    par = metrics['stat_par_diff']
+    opp = metrics['eq_opp_diff']
+
+    return 1/(np.abs(odds) + np.log(acc)**2)
+
+def fitness_rule_b(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    par = metrics['stat_par_diff']
+    opp = metrics['eq_opp_diff']
+
+    return 1/(odds**2 + par**2 + opp**2 + (1-acc)**2)
+
+def fitness_rule_c(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    par = metrics['stat_par_diff']
+    opp = metrics['eq_opp_diff']
+
+    return 1/(np.abs(odds + par + opp)/3 + np.log(acc)**2)
+def callback_generation(ga_instance):
+    print("Generation = {generation}".format(generation=ga_instance.generations_completed))
+    print("Fitness    = {fitness}".format(fitness=1/ga_instance.best_solution()[1]))
+
+def get_ga_instance(fitness_function, num_genes=4, init_range_low=0.0, init_range_high=1.0):
+    num_generations = 15  # Number of generations.
+    num_parents_mating = 5  # Number of solutions to be selected as parents in the mating pool.
+    parent_selection_type = "sss"  # Type of parent selection.
+    crossover_type = "single_point"  # Type of the crossover operator.
+    crossover_probability = 0.1
+    mutation_type = "random"  # Type of the mutation operator.
+    mutation_probability = 0.1  # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.
+    keep_parents = 2  # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
+    sol_per_pop = 15
+    gene_space = np.linspace(0.0, 1.0, 101)
+
+    return pygad.GA(num_generations=num_generations,
+                           num_parents_mating=num_parents_mating,
+                           fitness_func=fitness_function,
+                           num_genes=num_genes,
+                           # initial_population=initial_population,
+                           sol_per_pop=sol_per_pop,
+                           init_range_low=init_range_low,
+                           init_range_high=init_range_high,
+                           parent_selection_type=parent_selection_type,
+                           crossover_type=crossover_type,
+                           crossover_probability=crossover_probability,
+                           mutation_type=mutation_type,
+                           mutation_probability=mutation_probability,
+                           keep_parents=keep_parents,
+                           on_generation=callback_generation,
+                           gene_space=gene_space)
+
