@@ -129,7 +129,7 @@ def fitness_rule_a(metrics):
     par = metrics['stat_par_diff']
     opp = metrics['eq_opp_diff']
 
-    return 1/(np.abs(odds) + np.log(acc)**2)
+    return 1/(np.abs(par) + np.log(acc)**2)
 
 def fitness_rule_b(metrics):
     acc = metrics['overall_acc']
@@ -145,7 +145,16 @@ def fitness_rule_c(metrics):
     par = metrics['stat_par_diff']
     opp = metrics['eq_opp_diff']
 
-    return 1/(np.abs(odds + par + opp)/3 + np.log(acc)**2)
+    return 1/((np.abs(odds) + np.abs(par) + np.abs(opp))/3 + np.log(acc)**2)
+
+def fitness_rule_d(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    par = metrics['stat_par_diff']
+    opp = metrics['eq_opp_diff']
+
+    fit = (odds**2 + par**2)/(np.abs(odds) * np.abs(par)) + np.log(acc)**2
+    return 1/fit
 def callback_generation(ga_instance):
     print("Generation = {generation}".format(generation=ga_instance.generations_completed))
     print("Fitness    = {fitness}".format(fitness=1/ga_instance.best_solution()[1]))

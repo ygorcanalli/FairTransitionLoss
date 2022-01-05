@@ -16,7 +16,7 @@ from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 # Fair loss
 from models import FairMLP, SimpleMLP
-from util import eval_model, plot_comparison, get_ga_instance, fitness_rule_a, fitness_rule_b, fitness_rule_c
+from util import eval_model, plot_comparison, get_ga_instance, fitness_rule_a, fitness_rule_b, fitness_rule_c, fitness_rule_d
 
 
 import time
@@ -283,7 +283,7 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
         val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
         best_metrics = describe_metrics(val_metrics, thresh_arr)
 
-        fitness = fitness_rule_c(best_metrics)
+        fitness = fitness_rule_a(best_metrics)
         print('Fitness', fitness)
         print('-----------------------')
         return fitness
@@ -354,13 +354,13 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
 
 functions = [
     eval_fair_loss_mlp,
-    #eval_simple_mlp,
-    #eval_logistic_regression,
-    #eval_random_forest,
-    #eval_logistic_regression_reweighting,
-    #eval_random_forest_reweighting,
-    #eval_prejudice_remover,
-    #eval_adversarial_debiasing,
+    eval_simple_mlp,
+    eval_logistic_regression,
+    eval_random_forest,
+    eval_logistic_regression_reweighting,
+    eval_random_forest_reweighting,
+    eval_prejudice_remover,
+    eval_adversarial_debiasing,
     eval_meta_fair_classifier
 ]
 
