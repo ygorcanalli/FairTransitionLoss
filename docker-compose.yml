@@ -1,0 +1,21 @@
+version: "3"
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5438:5432"
+  aif360:
+    build: ./aif360
+    ports:
+      - "8888:8888"
+      - "6006:6006"
+    depends_on:
+      - db
+    environment:
+      - CONNECTION_STRING="postgresql://postgres:postgres@db:5432/optuna"
+
