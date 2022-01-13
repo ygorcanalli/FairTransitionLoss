@@ -1,14 +1,15 @@
 version: "3"
 services:
   db:
-    image: postgres
-    volumes:
-      - ./tmp/db:/var/lib/postgresql/data
+    restart: always
+    image: mariadb
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - MYSQL_USER=optuna
+      - MYSQL_PASSWORD=optuna
+      - MYSQL_DATABASE=optuna
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     ports:
-      - "5438:5432"
+      - "3309:3306"
   aif360:
     build: ./aif360
     ports:
@@ -17,5 +18,5 @@ services:
     depends_on:
       - db
     environment:
-      - CONNECTION_STRING="postgresql://postgres:postgres@db:5432/optuna"
+      - CONNECTION_STRING="mysql+mysqlconnector://optuna:optuna@db/optuna"
 

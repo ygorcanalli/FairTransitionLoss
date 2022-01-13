@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from matplotlib import cm
 from multiprocessing import Pool
@@ -106,7 +107,11 @@ def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_g
     if fitness_rule is not None:
 
         # best solution
-        study = optuna.create_study(direction='maximize')
+        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        study = optuna.create_study(direction='maximize',
+                                    study_name="logistic_regression_" + now,
+                                    storage="mysql+mysqlconnector://optuna:optuna@db/optuna")
+
         study.optimize(objective, n_trials=50)
 
         # eval on test set
