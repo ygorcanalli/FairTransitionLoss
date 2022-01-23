@@ -52,6 +52,7 @@ privileged_groups = [{sens_attr: v} for v in
 
 describe(dataset_train, dataset_val, dataset_test)
 
+CONNECTION_STRING = os.environ.get('CONNECTION_STRING')
 def eval_model(model, dataset, unprivileged_groups, privileged_groups):
     try:
         # sklearn classifier
@@ -83,6 +84,69 @@ def eval_model(model, dataset, unprivileged_groups, privileged_groups):
 
     return metrics
 
+def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    # training
+
+    def objective(trial):
+        tau = trial.suggest_float('tau', 0.01, 2.0)
+
+        model = MetaFairClassifier(tau=tau, sensitive_attr=sens_attr, type="sr")
+        scaler = StandardScaler()
+
+        scaled_train = train.copy()
+        scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+        scaled_val = val.copy()
+        scaled_val.features = scaler.transform(scaled_val.features)
+
+        model = model.fit(scaled_train)
+
+        val_metrics = eval_model(model, scaled_val, unprivileged_groups, privileged_groups)
+        return fitness_rule(val_metrics)
+
+    if fitness_rule is not None:
+        # best solution
+        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        study = optuna.create_study(direction='maximize',
+                                    study_name="meta_fair_classifier" + now,
+                                    storage=CONNECTION_STRING)
+
+        study.optimize(objective, n_trials=50)
+        # eval on test set
+        model = MetaFairClassifier(tau=study.best_params['tau'], sensitive_attr=sens_attr, type="sr")
+    else:
+        model = MetaFairClassifier(sensitive_attr=sens_attr, type="sr")
+
+    scaler = StandardScaler()
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+
+    model = model.fit(scaled_train)
+    model = model.fit(scaled_val)
+
+    scaled_test = test.copy()
+    scaled_test.features = scaler.transform(scaled_test.features)
+
+    test_metrics = eval_model(model, scaled_test, unprivileged_groups, privileged_groups)
+
+    if fitness_rule is not None:
+        test_metrics['fitness_rule'] = fitness_rule.__name__
+    else:
+        test_metrics['fitness_rule'] = 'No optimization'
+
+    print('-----------------------------------')
+    print('Meta Fair Classifier - Test metrics')
+    print('-----------------------------------')
+    describe_metrics(test_metrics)
+    test_metrics['method'] = 'meta_fair_classifier'
+    test_metrics['method+fitness_rule'] = '%s+%s' % (test_metrics['method'], test_metrics['fitness_rule'])
+    print('-----------------------------------')
+
+    return test_metrics
+
 
 def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
     # training
@@ -110,7 +174,7 @@ def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_g
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="logistic_regression_" + now,
-                                    storage="mysql+mysqlconnector://optuna:optuna@db/optuna")
+                                    storage=CONNECTION_STRING)
 
         study.optimize(objective, n_trials=50)
 
@@ -169,7 +233,7 @@ def plot_comparison(results):
                fancybox=True, shadow=False, ncol=1,
                fontsize='x-large')
     fig.tight_layout()
-    fig.show()
+    fig.savefig('hyperopt_plot.png', dpi=300)
 
 def fitness_rule_a(metrics):
     acc = metrics['overall_acc']
@@ -211,7 +275,8 @@ def describe_metrics(metrics):
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind']))
 
 functions = [
-    eval_logistic_regression,
+    eval_meta_fair_classifier,
+    eval_logistic_regression
 ]
 
 fitness_rules = [
