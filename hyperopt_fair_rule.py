@@ -24,12 +24,15 @@ import optuna
 import time
 from multiprocessing import Pool
 
-device = 'cpu'
+device = 'gpu'
 if device == 'cpu':
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
+
 import tensorflow.compat.v1 as tf_old
+tf_old.disable_eager_execution()
+
 
 label_map = {1.0: '>50K', 0.0: '<=50K'}
 protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
@@ -84,13 +87,20 @@ def eval_model(model, dataset, unprivileged_groups, privileged_groups):
 
     return metrics
 
-def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+
+def meta_fair_classifier_sr(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    return meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups, "sr", fitness_rule=fitness_rule)
+
+def meta_fair_classifier_fdr(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    return meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups, "fdr", fitness_rule=fitness_rule)
+
+def meta_fair_classifier(train, val, test, unprivileged_groups, privileged_groups, type, fitness_rule=None):
     # training
 
     def objective(trial):
         tau = trial.suggest_float('tau', 0.01, 2.0)
 
-        model = MetaFairClassifier(tau=tau, sensitive_attr=sens_attr, type="sr")
+        model = MetaFairClassifier(tau=tau, sensitive_attr=sens_attr, type=type)
         scaler = StandardScaler()
 
         scaled_train = train.copy()
@@ -113,9 +123,9 @@ def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_
 
         study.optimize(objective, n_trials=50)
         # eval on test set
-        model = MetaFairClassifier(tau=study.best_params['tau'], sensitive_attr=sens_attr, type="sr")
+        model = MetaFairClassifier(tau=study.best_params['tau'], sensitive_attr=sens_attr, type=type)
     else:
-        model = MetaFairClassifier(sensitive_attr=sens_attr, type="sr")
+        model = MetaFairClassifier(sensitive_attr=sens_attr, type=type)
 
     scaler = StandardScaler()
     scaled_train = train.copy()
@@ -148,7 +158,154 @@ def eval_meta_fair_classifier(train, val, test, unprivileged_groups, privileged_
     return test_metrics
 
 
-def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+def prejudice_remover(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    # training
+
+    def objective(trial):
+        eta = trial.suggest_float('eta', 0.01, 50.0)
+
+        model = PrejudiceRemover(eta=eta, sensitive_attr=sens_attr)
+        scaler = StandardScaler()
+
+        scaled_train = train.copy()
+        scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+        scaled_val = val.copy()
+        scaled_val.features = scaler.transform(scaled_val.features)
+
+        model = model.fit(scaled_train)
+
+        val_metrics = eval_model(model, scaled_val, unprivileged_groups, privileged_groups)
+        return fitness_rule(val_metrics)
+
+    if fitness_rule is not None:
+        # best solution
+        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        study = optuna.create_study(direction='maximize',
+                                    study_name="prejudice_remover" + now,
+                                    storage=CONNECTION_STRING)
+
+        study.optimize(objective, n_trials=50)
+        # eval on test set
+        model = PrejudiceRemover(eta=study.best_params['eta'], sensitive_attr=sens_attr)
+    else:
+        model = PrejudiceRemover(sensitive_attr=sens_attr)
+
+    scaler = StandardScaler()
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+
+    model = model.fit(scaled_train)
+    model = model.fit(scaled_val)
+
+    scaled_test = test.copy()
+    scaled_test.features = scaler.transform(scaled_test.features)
+
+    test_metrics = eval_model(model, scaled_test, unprivileged_groups, privileged_groups)
+
+    if fitness_rule is not None:
+        test_metrics['fitness_rule'] = fitness_rule.__name__
+    else:
+        test_metrics['fitness_rule'] = 'No optimization'
+
+    print('-----------------------------------')
+    print('Prejudice Remover - Test metrics')
+    print('-----------------------------------')
+    describe_metrics(test_metrics)
+    test_metrics['method'] = 'prejudice_remover'
+    test_metrics['method+fitness_rule'] = '%s+%s' % (test_metrics['method'], test_metrics['fitness_rule'])
+    print('-----------------------------------')
+
+    return test_metrics
+
+def adversarial_debiasing(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    # training
+
+    def objective(trial):
+        classifier_num_hidden_units = trial.suggest_categorical('classifier_num_hidden_units', [128, 256, 512])
+        adversary_loss_weight = trial.suggest_float('adversary_loss_weight', 0.01, 0.2)
+        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
+
+        model = AdversarialDebiasing(unprivileged_groups=unprivileged_groups,
+                                     privileged_groups=privileged_groups,
+                                     scope_name='adv_debias_' + str(datetime.now().timestamp()),
+                                     sess=tf_old.Session(),
+                                     classifier_num_hidden_units=classifier_num_hidden_units,
+                                     adversary_loss_weight=adversary_loss_weight,
+                                     batch_size=batch_size
+                                     )
+        scaler = StandardScaler()
+
+        scaled_train = train.copy()
+        scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+        scaled_val = val.copy()
+        scaled_val.features = scaler.transform(scaled_val.features)
+
+        model = model.fit(scaled_train)
+
+        val_metrics = eval_model(model, scaled_val, unprivileged_groups, privileged_groups)
+        return fitness_rule(val_metrics)
+
+    if fitness_rule is not None:
+        # best solution
+        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        study = optuna.create_study(direction='maximize',
+                                    study_name="adversarial_debiasing" + now,
+                                    storage=CONNECTION_STRING)
+
+        study.optimize(objective, n_trials=50)
+        # eval on test set
+        model = AdversarialDebiasing(unprivileged_groups=unprivileged_groups,
+                                     privileged_groups=privileged_groups,
+                                     scope_name='adv_debias_' + str(datetime.now().timestamp()),
+                                     sess=tf_old.Session(),
+                                     classifier_num_hidden_units=study.best_params['classifier_num_hidden_units'],
+                                     adversary_loss_weight=study.best_params['adversary_loss_weight'],
+                                     batch_size=study.best_params['batch_size']
+                                     )
+    else:
+        model = AdversarialDebiasing(unprivileged_groups=unprivileged_groups,
+                                     privileged_groups=privileged_groups,
+                                     scope_name='adv_debias_' + str(datetime.now().timestamp()),
+                                     sess=tf_old.Session(),
+                                     )
+
+    scaler = StandardScaler()
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+
+    model = model.fit(scaled_train)
+    model = model.fit(scaled_val)
+
+    scaled_test = test.copy()
+    scaled_test.features = scaler.transform(scaled_test.features)
+
+    test_metrics = eval_model(model, scaled_test, unprivileged_groups, privileged_groups)
+
+    if fitness_rule is not None:
+        test_metrics['fitness_rule'] = fitness_rule.__name__
+    else:
+        test_metrics['fitness_rule'] = 'No optimization'
+
+    print('-----------------------------------')
+    print('Adversarial Debiasing - Test metrics')
+    print('-----------------------------------')
+    describe_metrics(test_metrics)
+    test_metrics['method'] = 'adversarial_debiasing'
+    test_metrics['method+fitness_rule'] = '%s+%s' % (test_metrics['method'], test_metrics['fitness_rule'])
+    print('-----------------------------------')
+
+    return test_metrics
+
+
+def logistic_regression(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
     # training
     def objective(trial):
 
@@ -210,7 +367,7 @@ def eval_logistic_regression(train, val, test, unprivileged_groups, privileged_g
     print('-----------------------------------')
     return test_metrics
 
-def plot_comparison(results):
+def plot_comparison(results, name):
     results_df = pd.DataFrame(results)
     my_cmap = plt.cm.get_cmap('Dark2')
     n_bars = len(results_df.keys()) - 1
@@ -218,12 +375,12 @@ def plot_comparison(results):
     print(results_df)
     fig, axis = plt.subplots(3, 1, figsize=(14, 12), sharex=True,
                              gridspec_kw={'height_ratios': [1, 2, 2]})
-    fig.suptitle("Comparação de Métricas em Fairness", fontsize=16)
+    fig.suptitle("Comparação de Regras de Otimização em Fairness\n%s" % name, fontsize=16)
     axis[0].axis('off')
-    axis[1] = results_df[['overall_acc', 'bal_acc', 'method+fitness_rule']] \
-        .plot.bar(x='method+fitness_rule', rot=0, ax=axis[1], grid=True, legend=False, color=colors[:3])
-    axis[2] = results_df[['avg_odds_diff', 'stat_par_diff', 'eq_opp_diff', 'method+fitness_rule']] \
-        .plot.bar(x='method+fitness_rule', rot=0, ax=axis[2], grid=True, legend=False, color=colors[3:])
+    axis[1] = results_df[['overall_acc', 'bal_acc', 'fitness_rule']] \
+        .plot.bar(x='fitness_rule', rot=0, ax=axis[1], grid=True, legend=False, color=colors[:3])
+    axis[2] = results_df[['avg_odds_diff', 'stat_par_diff', 'eq_opp_diff', 'fitness_rule']] \
+        .plot.bar(x='fitness_rule', rot=0, ax=axis[2], grid=True, legend=False, color=colors[3:])
     bars_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
     bars, labels = [sum(lol, []) for lol in zip(*bars_labels)]
     metric_explain = get_metric_explain()
@@ -233,23 +390,45 @@ def plot_comparison(results):
                fancybox=True, shadow=False, ncol=1,
                fontsize='x-large')
     fig.tight_layout()
-    fig.savefig('hyperopt_plot.png', dpi=300)
+    fig.savefig('%s_plot.png' % name, dpi=300)
 
-def fitness_rule_a(metrics):
+def smooth_parity(metrics):
     acc = metrics['overall_acc']
-    odds = metrics['avg_odds_diff']
     par = metrics['stat_par_diff']
-    opp = metrics['eq_opp_diff']
-
     return 1/(np.abs(par) + np.log(acc)**2)
 
-def baseline_fitness_rule(metrics):
+def smooth_odds(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    return 1/(np.abs(odds) + np.log(acc)**2)
+
+def smooth_opportunity(metrics):
+    acc = metrics['overall_acc']
+    opp = metrics['eq_opp_diff']
+    return 1/(np.abs(opp) + np.log(acc)**2)
+
+def linear(metrics):
     acc = metrics['overall_acc']
     odds = metrics['avg_odds_diff']
     par = metrics['stat_par_diff']
     opp = metrics['eq_opp_diff']
 
     return 1/(acc - (odds + par + opp))
+
+def linear_parity(metrics):
+    acc = metrics['overall_acc']
+    par = metrics['stat_par_diff']
+    return 1/(acc - par)
+
+def linear_odds(metrics):
+    acc = metrics['overall_acc']
+    odds = metrics['avg_odds_diff']
+    return 1/(acc - odds)
+
+def linear_opportunity(metrics):
+    acc = metrics['overall_acc']
+    opp = metrics['eq_opp_diff']
+    return 1/(acc - opp)
 
 def get_metric_explain():
     return {
@@ -274,23 +453,32 @@ def describe_metrics(metrics):
     print("Corresponding equal opportunity difference value: {:6.4f}".format(metrics['eq_opp_diff']))
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind']))
 
-functions = [
-    eval_meta_fair_classifier,
-    eval_logistic_regression
+models = [
+    prejudice_remover,
+    adversarial_debiasing
 ]
 
 fitness_rules = [
     None,
-    fitness_rule_a,
-    baseline_fitness_rule,
+    smooth_parity,
+    smooth_odds,
+    smooth_opportunity,
+    linear,
+    linear_parity,
+    linear_odds,
+    linear_opportunity
 ]
 
-results = []
 
-for eval in functions:
+
+for model in models:
+    results = []
+    name = model.__name__
     for fitness_rule in fitness_rules:
-        result = eval(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, fitness_rule)
+        result = model(dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, fitness_rule)
         results.append(result)
-        plot_comparison(results)
+        plot_comparison(results, name)
+        pd_results = pd.DataFrame(results)
+        pd_results.to_csv('%s_results.csv' % name)
 
 
