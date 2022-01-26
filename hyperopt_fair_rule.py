@@ -17,18 +17,13 @@ from sklearn.preprocessing import StandardScaler
 # Bias mitigation techniques
 from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
+from models import FairMLP
 
 import optuna
 
 
 import time
 from multiprocessing import Pool
-
-device = 'gpu'
-if device == 'cpu':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-
 
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
@@ -118,7 +113,7 @@ def meta_fair_classifier(train, val, test, unprivileged_groups, privileged_group
         # best solution
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
-                                    study_name="meta_fair_classifier" + now,
+                                    study_name="meta_fair_classifier_" + now,
                                     storage=CONNECTION_STRING)
 
         study.optimize(objective, n_trials=50)
@@ -157,6 +152,85 @@ def meta_fair_classifier(train, val, test, unprivileged_groups, privileged_group
 
     return test_metrics
 
+def fair_mlp(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
+    # training
+
+    def objective(trial):
+        privileged_demotion = trial.suggest_float('privileged_demotion', 0.0, 1.0)
+        privileged_promotion = trial.suggest_float('privileged_promotion', 0.0, 1.0)
+        protected_demotion = trial.suggest_float('protected_demotion', 0.0, 1.0)
+        protected_promotion = trial.suggest_float('protected_promotion', 0.0, 1.0)
+
+        model = FairMLP(sensitive_attr=sens_attr,
+                        hidden_sizes=[16, 32],
+                        batch_size=32,
+                        privileged_demotion=privileged_demotion, privileged_promotion=privileged_promotion,
+                        protected_demotion=protected_demotion, protected_promotion=protected_promotion)
+        scaler = StandardScaler()
+
+        scaled_train = train.copy()
+        scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+        scaled_val = val.copy()
+        scaled_val.features = scaler.transform(scaled_val.features)
+
+        model = model.fit(scaled_train)
+
+        val_metrics = eval_model(model, scaled_val, unprivileged_groups, privileged_groups)
+        return fitness_rule(val_metrics)
+
+    if fitness_rule is not None:
+        # best solution
+        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        study = optuna.create_study(direction='maximize',
+                                    study_name="fair_mlp_" + now,
+                                    storage=CONNECTION_STRING)
+
+        study.optimize(objective, n_trials=50, n_jobs=4)
+        # eval on test set
+        model = FairMLP(sensitive_attr=sens_attr,
+                        hidden_sizes=[16, 32],
+                        batch_size=32,
+                        privileged_demotion=study.best_params['privileged_demotion'],
+                        privileged_promotion=study.best_params['privileged_promotion'],
+                        protected_demotion=study.best_params['protected_demotion'],
+                        protected_promotion=study.best_params['protected_promotion'])
+    else:
+        model = FairMLP(sensitive_attr=sens_attr,
+                        hidden_sizes=[16, 32],
+                        batch_size=32)
+
+    scaler = StandardScaler()
+    scaled_train = train.copy()
+    scaled_train.features = scaler.fit_transform(scaled_train.features)
+
+    scaled_val = val.copy()
+    scaled_val.features = scaler.fit_transform(scaled_val.features)
+
+    model = model.fit(scaled_train)
+    model = model.fit(scaled_val)
+
+    scaled_test = test.copy()
+    scaled_test.features = scaler.transform(scaled_test.features)
+
+    test_metrics = eval_model(model, scaled_test, unprivileged_groups, privileged_groups)
+
+    if fitness_rule is not None:
+        test_metrics['fitness_rule'] = fitness_rule.__name__
+    else:
+        test_metrics['fitness_rule'] = 'No optimization'
+
+    print('-----------------------------------')
+    print('Fair MLP - Test metrics')
+    print('-----------------------------------')
+    describe_metrics(test_metrics)
+    test_metrics['method'] = 'fair_mlp'
+    test_metrics['method+fitness_rule'] = '%s+%s' % (test_metrics['method'], test_metrics['fitness_rule'])
+    print('-----------------------------------')
+
+    return test_metrics
+
+
 
 def prejudice_remover(train, val, test, unprivileged_groups, privileged_groups, fitness_rule=None):
     # training
@@ -182,7 +256,7 @@ def prejudice_remover(train, val, test, unprivileged_groups, privileged_groups, 
         # best solution
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
-                                    study_name="prejudice_remover" + now,
+                                    study_name="prejudice_remover_" + now,
                                     storage=CONNECTION_STRING)
 
         study.optimize(objective, n_trials=50)
@@ -254,7 +328,7 @@ def adversarial_debiasing(train, val, test, unprivileged_groups, privileged_grou
         # best solution
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
-                                    study_name="adversarial_debiasing" + now,
+                                    study_name="adversarial_debiasing_" + now,
                                     storage=CONNECTION_STRING)
 
         study.optimize(objective, n_trials=50)
@@ -434,10 +508,10 @@ def get_metric_explain():
     return {
         'overall_acc': 'Accuracy - acurácia padrão',
         'bal_acc': 'Balanced Accuracy - média entre taxa de verdadeiros positivos e verdadeiros negativos',
-        'avg_odds_diff': 'Average Odds Difference - diferença de verdadeiros e falsos positivos dentre os grupos',
+        'avg_odds_diff': 'Equalized Odds - diferença de verdadeiros e falsos positivos dentre os grupos',
         'disp_imp': 'Disparate Impact - razão de previsões positivas dentre os grupos',
-        'stat_par_diff': 'Statistical Parity Difference - diferença de previsões positivas dentre os grupos',
-        'eq_opp_diff': 'Equalized Odds Difference - diferença de verdadeiros positivos dentre os grupos'
+        'stat_par_diff': 'Statistical Parity - diferença de previsões positivas dentre os grupos',
+        'eq_opp_diff': 'Equal Opportunity - diferença de falsos negativos dentre os grupos'
     }
 
 def describe_metrics(metrics):
@@ -454,8 +528,7 @@ def describe_metrics(metrics):
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind']))
 
 models = [
-    prejudice_remover,
-    adversarial_debiasing
+    fair_mlp
 ]
 
 fitness_rules = [
