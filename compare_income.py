@@ -353,6 +353,7 @@ def eval_simple_mlp(train, val, test, unprivileged_groups, privileged_groups):
 
 
 functions = [
+    eval_adversarial_debiasing,
     eval_fair_loss_mlp,
     eval_simple_mlp,
     eval_logistic_regression,
@@ -360,7 +361,6 @@ functions = [
     eval_logistic_regression_reweighting,
     eval_random_forest_reweighting,
     eval_prejudice_remover,
-    eval_adversarial_debiasing,
     eval_meta_fair_classifier
 ]
 

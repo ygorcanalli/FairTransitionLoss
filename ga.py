@@ -54,7 +54,7 @@ def fitness_rule(metrics):
     par = metrics['stat_par_diff']
     opp = metrics['eq_opp_diff']
 
-    return odds**2 + par**2 + opp**2 + (1-acc)**2
+    return par**2 + (acc-1)**2
 
 def fitness_function(solution, solution_idx):
     # training
@@ -104,20 +104,6 @@ class PooledGA(pygad.GA):
         pop_fitness = np.array(pop_fitness)
         return pop_fitness
 
-# Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 15  # Number of generations.
-num_parents_mating = 30  # Number of solutions to be selected as parents in the mating pool.
-parent_selection_type = "sss"  # Type of parent selection.
-crossover_type = "single_point"  # Type of the crossover operator.
-crossover_probability = 0.1
-mutation_type = "random"  # Type of the mutation operator.
-mutation_probability = 0.1  # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.
-keep_parents = 2  # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
-sol_per_pop = 100
-num_genes = 4
-init_range_low = 0.0
-init_range_high = 1.0
-gene_space = np.linspace(0.0, 1.0, 101)
 
 start_time = time.time()
 

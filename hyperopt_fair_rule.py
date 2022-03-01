@@ -20,6 +20,18 @@ from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasin
 from models import FairMLP
 
 import optuna
+from optuna.pruners import HyperbandPruner
+from optuna.samplers import TPESampler
+
+N_TRIALS = 50
+SAMPLER = TPESampler
+PRUNER = 'default'#HyperbandPruner
+
+def get_sampler():
+    return TPESampler()
+
+def get_pruner():
+    return HyperbandPruner()
 
 
 import time
@@ -114,9 +126,11 @@ def meta_fair_classifier(train, val, test, unprivileged_groups, privileged_group
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="meta_fair_classifier_" + now,
-                                    storage=CONNECTION_STRING)
+                                    storage=CONNECTION_STRING,
+                                    pruner=get_pruner(),
+                                    sampler=get_sampler())
 
-        study.optimize(objective, n_trials=50)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
         # eval on test set
         model = MetaFairClassifier(tau=study.best_params['tau'], sensitive_attr=sens_attr, type=type)
     else:
@@ -184,9 +198,11 @@ def fair_mlp(train, val, test, unprivileged_groups, privileged_groups, fitness_r
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="fair_mlp_" + now,
-                                    storage=CONNECTION_STRING)
+                                    storage=CONNECTION_STRING,
+                                    pruner=get_pruner(),
+                                    sampler=get_sampler())
 
-        study.optimize(objective, n_trials=50, n_jobs=4)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
         # eval on test set
         model = FairMLP(sensitive_attr=sens_attr,
                         hidden_sizes=[16, 32],
@@ -257,9 +273,11 @@ def prejudice_remover(train, val, test, unprivileged_groups, privileged_groups, 
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="prejudice_remover_" + now,
-                                    storage=CONNECTION_STRING)
+                                    storage=CONNECTION_STRING,
+                                    sampler=get_sampler(),
+                                    pruner=get_pruner())
 
-        study.optimize(objective, n_trials=50)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
         # eval on test set
         model = PrejudiceRemover(eta=study.best_params['eta'], sensitive_attr=sens_attr)
     else:
@@ -329,9 +347,11 @@ def adversarial_debiasing(train, val, test, unprivileged_groups, privileged_grou
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="adversarial_debiasing_" + now,
-                                    storage=CONNECTION_STRING)
+                                    storage=CONNECTION_STRING,
+                                    pruner=get_pruner(),
+                                    sampler=get_sampler())
 
-        study.optimize(objective, n_trials=50)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
         # eval on test set
         model = AdversarialDebiasing(unprivileged_groups=unprivileged_groups,
                                      privileged_groups=privileged_groups,
@@ -405,9 +425,11 @@ def logistic_regression(train, val, test, unprivileged_groups, privileged_groups
         now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         study = optuna.create_study(direction='maximize',
                                     study_name="logistic_regression_" + now,
-                                    storage=CONNECTION_STRING)
+                                    storage=CONNECTION_STRING,
+                                    pruner=get_pruner(),
+                                    sampler=get_sampler())
 
-        study.optimize(objective, n_trials=50)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
 
         # eval on test set
         model = make_pipeline(StandardScaler(),
@@ -469,40 +491,32 @@ def plot_comparison(results, name):
 def smooth_parity(metrics):
     acc = metrics['overall_acc']
     par = metrics['stat_par_diff']
-    return 1/(np.abs(par) + np.log(acc)**2)
+    return -par - (acc-1)**2
 
 def smooth_odds(metrics):
     acc = metrics['overall_acc']
     odds = metrics['avg_odds_diff']
-    return 1/(np.abs(odds) + np.log(acc)**2)
+    return -odds - (acc-1)**2
 
 def smooth_opportunity(metrics):
     acc = metrics['overall_acc']
     opp = metrics['eq_opp_diff']
-    return 1/(np.abs(opp) + np.log(acc)**2)
-
-def linear(metrics):
-    acc = metrics['overall_acc']
-    odds = metrics['avg_odds_diff']
-    par = metrics['stat_par_diff']
-    opp = metrics['eq_opp_diff']
-
-    return 1/(acc - (odds + par + opp))
+    return -opp - (acc-1)**2
 
 def linear_parity(metrics):
     acc = metrics['overall_acc']
     par = metrics['stat_par_diff']
-    return 1/(acc - par)
+    return acc - abs(par)
 
 def linear_odds(metrics):
     acc = metrics['overall_acc']
     odds = metrics['avg_odds_diff']
-    return 1/(acc - odds)
+    return acc - abs(odds)
 
 def linear_opportunity(metrics):
     acc = metrics['overall_acc']
     opp = metrics['eq_opp_diff']
-    return 1/(acc - opp)
+    return acc - abs(opp)
 
 def get_metric_explain():
     return {
@@ -528,15 +542,17 @@ def describe_metrics(metrics):
     print("Corresponding Theil index value: {:6.4f}".format(metrics['theil_ind']))
 
 models = [
-    fair_mlp
+    fair_mlp,
+    prejudice_remover,
+    meta_fair_classifier_sr,
+    meta_fair_classifier_fdr
 ]
 
 fitness_rules = [
-    None,
+    #None,
     smooth_parity,
     smooth_odds,
     smooth_opportunity,
-    linear,
     linear_parity,
     linear_odds,
     linear_opportunity
