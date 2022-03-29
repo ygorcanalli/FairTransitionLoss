@@ -11,11 +11,6 @@ services:
       - "3309:3306"
   aif360:
     build: ./aif360
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - capabilities: [gpu]
     ports:
       - "8888:8888"
       - "6006:6006"
