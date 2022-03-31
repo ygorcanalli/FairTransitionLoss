@@ -1,27 +1,26 @@
 
 from multiprocessing import Pool
+
+import pandas as pd
 from aif360.datasets import AdultDataset
 from aif360.metrics import ClassificationMetric
 from models import FairMLP
+from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 from fitness_rules import paraboloid_parity, linear_parity
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pygad
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 15  # Number of generations.
-num_parents_mating = 30  # Number of solutions to be selected as parents in the mating pool.
+num_generations = 10 # Number of generations.
+num_parents_mating = 10  # Number of solutions to be selected as parents in the mating pool.
 parent_selection_type = "sss"  # Type of parent selection.
 crossover_type = "single_point"  # Type of the crossover operator.
 crossover_probability = 0.1
 mutation_type = "random"  # Type of the mutation operator.
 mutation_probability = 0.1  # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.
 keep_parents = 2  # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
-sol_per_pop = 100
-num_genes = 4
-init_range_low = 0.0
-init_range_high = 1.0
-gene_space = np.linspace(0.0, 1.0, 101)
+sol_per_pop = 20
 
 def eval_metrics(model, dataset, unprivileged_groups, privileged_groups):
     try:
@@ -117,6 +116,20 @@ def fair_mlp_initializer(sens_attr, solution=None):
                         batch_size=32)
     return model
 
+def prejudice_remover_initializer(sens_attr, solution=None):
+    if solution is not None:
+        model = PrejudiceRemover(eta=solution[0], sensitive_attr=sens_attr)
+    else:
+        model = PrejudiceRemover(sensitive_attr=sens_attr)
+    return model
+
+def meta_fair_classifier_sr_initializer(sens_attr, solution=None):
+    if solution is not None:
+        model = MetaFairClassifier(tau=solution[0], sensitive_attr=sens_attr, type='sr')
+    else:
+        model = MetaFairClassifier(sensitive_attr=sens_attr, type='sr')
+    return model
+
 def evolve_model(dataset_reader, model_initializer, fitness_rule):
     dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr = dataset_reader()
 
@@ -152,6 +165,7 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
 
     if fitness_rule is not None:
         # best solution
+        num_genes, init_range_low, init_range_high = genes[model_initializer.__name__]
         ga_instance = pygad.GA(num_generations=num_generations,
                                num_parents_mating=num_parents_mating,
                                fitness_func=fitness_function,
@@ -166,8 +180,7 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
                                mutation_type=mutation_type,
                                mutation_probability=mutation_probability,
                                keep_parents=keep_parents,
-                               on_generation=callback_generation,
-                               gene_space=gene_space)
+                               on_generation=callback_generation)
         ga_instance.run()
         best_solution, best_solution_fitness, best_solution_idx = ga_instance.best_solution()
         print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=best_solution_fitness))
@@ -207,8 +220,15 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
 
 
 methods = [
-    fair_mlp_initializer
+    meta_fair_classifier_sr_initializer
 ]
+
+genes = {
+    'fair_mlp_initializer': (4, 0.0, 1.0),
+    'prejudice_remover_initializer': (1, 0.01, 50.0),
+    'meta_fair_classifier_sr_initializer' : (1, 0.01, 2.0),
+    'adversarial_debiasing_initializer'
+}
 
 datasets = [
     adult_dataset_reader
@@ -220,16 +240,19 @@ rules = [
     linear_parity
 ]
 
-with Pool(processes=4) as pool:
-    for dataset_reader in datasets:
-        for model_initializer in methods:
-            for fitness_rule in rules:
-                best_metrics = evolve_model(dataset_reader, model_initializer, fitness_rule)
-                print('Best metrics')
-                print('Dataset:', dataset_reader.__name__)
-                print('Method:', model_initializer.__name__)
-                if fitness_rule is not None:
-                    print('Fitness rule:', fitness_rule.__name__)
-                else:
-                    print('Fitness rule: None')
-                describe_metrics(best_metrics)
+results = []
+for dataset_reader in datasets:
+    for model_initializer in methods:
+        for fitness_rule in rules:
+            best_metrics = evolve_model(dataset_reader, model_initializer, fitness_rule)
+            print('Best metrics')
+            print('Dataset:', dataset_reader.__name__)
+            print('Method:', model_initializer.__name__)
+            if fitness_rule is not None:
+                print('Fitness rule:', fitness_rule.__name__)
+            else:
+                print('Fitness rule: None')
+            describe_metrics(best_metrics)
+            results.append(best_metrics)
+            results_df = pd.DataFrame(results)
+            results_df.to_csv('results2.csv')
