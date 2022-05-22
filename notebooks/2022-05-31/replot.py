@@ -58,4 +58,8 @@ plot_comparison(results, 'Income', 'Equalized Odds')
 results = pd.read_csv('opportunity_results.csv')
 plot_comparison(results, 'Income', 'Equal Opportunity')
 
+results = pd.read_csv('all_results.csv')
+plot_comparison(results, 'Income', 'All Three')
+
+
 

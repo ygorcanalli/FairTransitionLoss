@@ -7,7 +7,7 @@ from aif360.datasets import AdultDataset
 from aif360.metrics import ClassificationMetric
 from models import FairMLP, SimpleMLP
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
-from fitness_rules import linear_parity, linear_odds, linear_opportunity
+from fitness_rules import linear_parity, linear_odds, linear_opportunity, linear_all
 from sklearn.preprocessing import StandardScaler
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
@@ -316,7 +316,7 @@ datasets = [
 ]
 
 rules = [
-    linear_opportunity
+    linear_all
 ]
 
 results = []
@@ -334,4 +334,4 @@ for dataset_reader in datasets:
             describe_metrics(best_metrics)
             results.append(best_metrics)
             results_df = pd.DataFrame(results)
-            results_df.to_csv('odds_results.csv')
+            results_df.to_csv('all_results.csv')

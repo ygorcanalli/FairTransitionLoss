@@ -1,3 +1,5 @@
+import numpy as np
+
 def paraboloid_parity(metrics):
     acc = metrics['overall_acc']
     par = metrics['stat_par_diff']
@@ -27,3 +29,11 @@ def linear_opportunity(metrics):
     acc = metrics['overall_acc']
     opp = metrics['eq_opp_diff']
     return acc - abs(opp)
+
+def linear_all(metrics):
+    acc = metrics['overall_acc']
+    opp = metrics['eq_opp_diff']
+    odds = metrics['avg_odds_diff']
+    par = metrics['stat_par_diff']
+    unfairness = np.sqrt(opp**2 + odds**2 + par**2)
+    return acc - unfairness
