@@ -37,3 +37,6 @@ def linear_all(metrics):
     par = metrics['stat_par_diff']
     unfairness = np.sqrt(opp**2 + odds**2 + par**2)
     return acc - unfairness
+
+def accuracy_only(metrics):
+    return metrics['overall_acc']

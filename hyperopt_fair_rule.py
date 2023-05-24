@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 # Bias mitigation techniques
 from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
-from models import FairMLP
+from models import FairTransitionLossMLP
 
 import optuna
 from optuna.pruners import HyperbandPruner
@@ -175,11 +175,11 @@ def fair_mlp(train, val, test, unprivileged_groups, privileged_groups, fitness_r
         protected_demotion = trial.suggest_float('protected_demotion', 0.0, 1.0)
         protected_promotion = trial.suggest_float('protected_promotion', 0.0, 1.0)
 
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32,
-                        privileged_demotion=privileged_demotion, privileged_promotion=privileged_promotion,
-                        protected_demotion=protected_demotion, protected_promotion=protected_promotion)
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[16, 32],
+                                      batch_size=32,
+                                      privileged_demotion=privileged_demotion, privileged_promotion=privileged_promotion,
+                                      protected_demotion=protected_demotion, protected_promotion=protected_promotion)
         scaler = StandardScaler()
 
         scaled_train = train.copy()
@@ -204,17 +204,17 @@ def fair_mlp(train, val, test, unprivileged_groups, privileged_groups, fitness_r
 
         study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
         # eval on test set
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32,
-                        privileged_demotion=study.best_params['privileged_demotion'],
-                        privileged_promotion=study.best_params['privileged_promotion'],
-                        protected_demotion=study.best_params['protected_demotion'],
-                        protected_promotion=study.best_params['protected_promotion'])
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[16, 32],
+                                      batch_size=32,
+                                      privileged_demotion=study.best_params['privileged_demotion'],
+                                      privileged_promotion=study.best_params['privileged_promotion'],
+                                      protected_demotion=study.best_params['protected_demotion'],
+                                      protected_promotion=study.best_params['protected_promotion'])
     else:
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32)
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[16, 32],
+                                      batch_size=32)
 
     scaler = StandardScaler()
     scaled_train = train.copy()

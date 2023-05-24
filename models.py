@@ -3,6 +3,7 @@ import numpy as np
 from tensorflow.keras import Sequential
 from tensorflow.keras.losses import binary_crossentropy
 from tensorflow.keras.layers import InputLayer, Dropout, Dense
+from tensorflow.keras.callbacks import EarlyStopping
 from aif360.algorithms import Transformer
 from tensorflow.keras import backend as K
 
@@ -23,6 +24,7 @@ def fair_forward(P_privileged, P_protected):
         privileged_pred = binary_crossentropy(y_true_labels, K.dot(y_pred, P_privileged))
         protected_pred = binary_crossentropy(y_true_labels, K.dot(y_pred, P_protected))
 
+        # using onehootencoding to choose the transition matrix to use without if
         combined_pred = privileged_pred * y_true_sensitive[:, 0] + \
                         protected_pred * y_true_sensitive[:, 1]
 
@@ -58,8 +60,8 @@ def fair_forward_2(P_privileged, P_protected):
 class SimpleMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
-                 hidden_sizes=[32, 64, 32],
-                 num_epochs=10, batch_size=64):
+                 hidden_sizes=[32, 64, 32], dropout=0.1,
+                 num_epochs=50, batch_size=64, patience=3):
 
         self.model = None
         self.hidden_sizes = hidden_sizes
@@ -67,16 +69,18 @@ class SimpleMLP(Transformer):
         self.num_classes = 2
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        self.dropout = dropout
+        self.patience = patience
         self.sensitive_attr = sensitive_attr
         self.classes_ = None
 
     def _compile_model(self):
         self.model = Sequential()
         self.model.add(InputLayer(input_shape=self.input_shape))
-        self.model.add(Dropout(0.1))
+        self.model.add(Dropout(self.dropout))
 
         for hidden_size in self.hidden_sizes:
-            self.model.add(Dense(hidden_size, activation='relu'))
+            self.model.add(Dense(hidden_size, activation='tanh'))
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
         self.model.compile(optimizer='adam',
@@ -87,13 +91,17 @@ class SimpleMLP(Transformer):
             self._compile_model()
             self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
 
+        callback = EarlyStopping(monitor='loss', patience=self.patience)
+
         X = dataset.features
         y_expanded = np.zeros( shape=(X.shape[0], 2) )
 
         y_expanded[:,0] = (dataset.labels == dataset.unfavorable_label).reshape(X.shape[0]).astype(int)
         y_expanded[:,1] = (dataset.labels == dataset.favorable_label).reshape(X.shape[0]).astype(int)
 
-        self.model.fit(X, y_expanded, epochs=self.num_epochs, batch_size=self.batch_size, verbose=False)
+        self.model.fit(X, y_expanded, epochs=self.num_epochs,
+                       batch_size=self.batch_size, callbacks=[callback],
+                       verbose=False)
 
         return self
 
@@ -104,13 +112,13 @@ class SimpleMLP(Transformer):
         logits = self.predict_proba(X)
         return np.argmax(logits, axis=1)
 
-class FairMLP(Transformer):
+class FairTransitionLossMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
                  privileged_demotion=0.1, privileged_promotion=0.01,
                  protected_demotion=0.01, protected_promotion=0.1,
-                 hidden_sizes=[32, 64, 32],
-                 num_epochs=10, batch_size=64):
+                 hidden_sizes=[32, 64, 32], dropout=0.1, patience=3,
+                 num_epochs=50, batch_size=64):
         self.p_privileged = np.array([[1 - privileged_demotion, privileged_demotion],
                                       [privileged_promotion, 1 - privileged_promotion]])
         self.p_protected = np.array([[1 - protected_demotion, protected_demotion],
@@ -121,16 +129,18 @@ class FairMLP(Transformer):
         self.num_classes = 2
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        self.dropout = dropout
+        self.patience = patience
         self.sensitive_attr = sensitive_attr
         self.classes_ = None
 
     def _compile_model(self):
         self.model = Sequential()
         self.model.add(InputLayer(input_shape=self.input_shape))
-        self.model.add(Dropout(0.1))
+        self.model.add(Dropout(self.dropout))
 
         for hidden_size in self.hidden_sizes:
-            self.model.add(Dense(hidden_size, activation='relu'))
+            self.model.add(Dense(hidden_size, activation='tanh'))
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
         self.model.compile(optimizer='adam',
@@ -141,6 +151,8 @@ class FairMLP(Transformer):
             self._compile_model()
             self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
 
+        callback = EarlyStopping(monitor='loss', patience=self.patience)
+
         X = dataset.features
         y_expanded = np.zeros( shape=(X.shape[0], 4) )
         sensitive_index = dataset.protected_attribute_names.index(self.sensitive_attr)
@@ -150,7 +162,9 @@ class FairMLP(Transformer):
         y_expanded[:,2] = (dataset.labels == dataset.unfavorable_label).reshape(X.shape[0]).astype(int)
         y_expanded[:,3] = (dataset.labels == dataset.favorable_label).reshape(X.shape[0]).astype(int)
 
-        self.model.fit(X, y_expanded, epochs=self.num_epochs, batch_size=self.batch_size, verbose=False)
+        self.model.fit(X, y_expanded, epochs=self.num_epochs,
+                       batch_size=self.batch_size, callbacks=[callback],
+                       verbose=False)
 
         return self
 

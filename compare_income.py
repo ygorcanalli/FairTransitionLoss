@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 # Fair loss
-from models import FairMLP, SimpleMLP
+from models import FairTransitionLossMLP, SimpleMLP
 from util import eval_model, plot_comparison, get_ga_instance, fitness_rule_a, fitness_rule_b, fitness_rule_c, fitness_rule_d
 
 
@@ -273,11 +273,11 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
 
 
     def fitness_function(solution, solution_idx):
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32,
-                        privileged_demotion=solution[0], privileged_promotion=solution[1],
-                        protected_demotion=solution[2], protected_promotion=solution[3])
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[16, 32],
+                                      batch_size=32,
+                                      privileged_demotion=solution[0], privileged_promotion=solution[1],
+                                      protected_demotion=solution[2], protected_promotion=solution[3])
 
         model = model.fit(scaled_train)
         val_metrics = eval_model(model, scaled_val, thresh_arr, unprivileged_groups, privileged_groups)
@@ -299,11 +299,11 @@ def eval_fair_loss_mlp(train, val, test, unprivileged_groups, privileged_groups)
     ga_instance.plot_result(title="PyGAD & Keras - Iteration vs. Fitness", linewidth=4)
 
     best_solution = ga_instance.best_solution
-    best_model = FairMLP(sensitive_attr=sens_attr,
-                    hidden_sizes=[16, 32],
-                    batch_size=32,
-                    privileged_demotion=solution[0], privileged_promotion=solution[1],
-                    protected_demotion=solution[2], protected_promotion=solution[3])
+    best_model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                       hidden_sizes=[16, 32],
+                                       batch_size=32,
+                                       privileged_demotion=solution[0], privileged_promotion=solution[1],
+                                       protected_demotion=solution[2], protected_promotion=solution[3])
 
     best_model = best_model.fit(scaled_train)
     best_model = best_model.fit(scaled_val)

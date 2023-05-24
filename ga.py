@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from aif360.algorithms.preprocessing import Reweighing
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier
 # Fair loss
-from models import FairMLP, SimpleMLP
+from models import FairTransitionLossMLP, SimpleMLP
 from util import eval_model, plot_comparison
 import os
 
@@ -29,15 +29,13 @@ if device == 'cpu':
 
 label_map = {1.0: '>50K', 0.0: '<=50K'}
 protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
-ad = AdultDataset(protected_attribute_names=['sex'],
+(train,
+ val,
+ test) = AdultDataset(protected_attribute_names=['race', 'sex'],
                   categorical_features=['workclass', 'education', 'marital-status',
                                         'occupation', 'relationship', 'native-country', 'race'],
                   privileged_classes=[['Male']], metadata={'label_map': label_map,
-                                                           'protected_attribute_maps': protected_attribute_maps})
-(train,
- val,
- test) = AdultDataset().split([0.5, 0.8], shuffle=True)
-
+                                                           'protected_attribute_maps': protected_attribute_maps}).split([0.5, 0.8], shuffle=True)
 sens_ind = 1
 sens_attr = train.protected_attribute_names[sens_ind]
 
@@ -59,11 +57,11 @@ def fitness_rule(metrics):
 def fitness_function(solution, solution_idx):
     # training
 
-    model = FairMLP(sensitive_attr=sens_attr,
-                    hidden_sizes=[16, 32],
-                    batch_size=32,
-                    privileged_demotion=solution[0], privileged_promotion=solution[1],
-                    protected_demotion=solution[2], protected_promotion=solution[3])
+    model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                  hidden_sizes=[16, 32],
+                                  batch_size=32,
+                                  privileged_demotion=solution[0], privileged_promotion=solution[1],
+                                  protected_demotion=solution[2], protected_promotion=solution[3])
 
     scaler = StandardScaler()
 

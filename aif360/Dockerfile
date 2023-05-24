@@ -13,4 +13,9 @@ RUN mv adult.data /usr/local/lib/python3.6/dist-packages/aif360/data/raw/adult
 RUN mv adult.test /usr/local/lib/python3.6/dist-packages/aif360/data/raw/adult
 RUN mv adult.names /usr/local/lib/python3.6/dist-packages/aif360/data/raw/adult
 
+RUN wget https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data
+RUN wget https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.doc
+RUN mv german.data /usr/local/lib/python3.6/dist-packages/aif360/data/raw/german
+RUN mv german.doc /usr/local/lib/python3.6/dist-packages/aif360/data/raw/german
+
 EXPOSE 8888 6006

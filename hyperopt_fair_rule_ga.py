@@ -5,15 +5,17 @@ import pandas as pd
 from datetime import datetime
 from aif360.datasets import AdultDataset
 from aif360.metrics import ClassificationMetric
-from models import FairMLP, SimpleMLP
+from models import FairTransitionLossMLP, SimpleMLP
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
-from fitness_rules import linear_parity, linear_odds, linear_opportunity, linear_all
+from fitness_rules import linear_parity, linear_odds, linear_opportunity, linear_all, accuracy_only
 from sklearn.preprocessing import StandardScaler
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
 import tensorflow as tf
 import numpy as np
 import pygad
+
+start_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
 num_generations = 10 # Number of generations.
@@ -92,8 +94,8 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
 
     if fitness_rule is not None:
         # best solution
-        gene_type = genes[model_initializer.__name__]['type']
-        gene_space = genes[model_initializer.__name__]['space']
+        gene_type = genes_space[model_initializer.__name__]['type']
+        gene_space = genes_space[model_initializer.__name__]['space']
         ga_instance = pygad.GA(num_generations=num_generations,
                                num_parents_mating=num_parents_mating,
                                fitness_func=fitness_function,
@@ -201,27 +203,31 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
         model = GerryFairClassifier(fairness_def='FP')
     return model
 
-def fair_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, solution=None):
+def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, solution=None):
     if solution is not None:
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32,
-                        privileged_demotion=solution[0], privileged_promotion=solution[1],
-                        protected_demotion=solution[2], protected_promotion=solution[3])
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[solution[0]],
+                                      dropout=solution[1],
+                                      batch_size=32,
+                                      privileged_demotion=solution[2], privileged_promotion=solution[3],
+                                      protected_demotion=solution[4], protected_promotion=solution[5])
     else:
-        model = FairMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
-                        batch_size=32)
+        model = FairTransitionLossMLP(sensitive_attr=sens_attr,
+                                      hidden_sizes=[32],
+                                      dropout=0.1,
+                                      batch_size=32)
     return model
 
 def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, solution=None):
     if solution is not None:
         model = SimpleMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
+                        hidden_sizes=[solution[0]],
+                        dropout=solution[1],
                         batch_size=32)
     else:
         model = SimpleMLP(sensitive_attr=sens_attr,
-                        hidden_sizes=[16, 32],
+                        hidden_sizes=[32],
+                        dropout=0.1,
                         batch_size=32)
     return model
 
@@ -259,17 +265,19 @@ def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 
-
-methods = [
-    meta_fair_classifier_fdr_initializer,
-    prejudice_remover_initializer,
-    fair_mlp_initializer,
-]
-
-genes = {
-    'fair_mlp_initializer':  {
-                'type': [float, float, float, float],
+genes_space = {
+    'simple_mlp_initializer':  {
+                'type': [int, float],
                 'space': [
+                    [16, 32, 64, 128],
+                    {'low': 0.0, 'high': 0.2}
+                ]
+            },
+    'ftl_mlp_initializer':  {
+                'type': [int, float, float, float, float, float],
+                'space': [
+                    [16, 32, 64, 128],
+                    {'low': 0.0, 'high': 0.2},
                     {'low': 0.0, 'high': 1.0},
                     {'low': 0.0, 'high': 1.0},
                     {'low': 0.0, 'high': 1.0},
@@ -312,14 +320,22 @@ genes = {
 
 datasets = [
     adult_dataset_reader,
-
 ]
 
 rules = [
-    linear_all
+    linear_parity,
+    linear_odds,
+    linear_opportunity
 ]
 
+methods = [
+    simple_mlp_initializer
+]
+
+
 results = []
+results_df = pd.DataFrame(results)
+results_df.to_csv('results_%s.csv' % start_time)
 for dataset_reader in datasets:
     for model_initializer in methods:
         for fitness_rule in rules:
@@ -334,4 +350,4 @@ for dataset_reader in datasets:
             describe_metrics(best_metrics)
             results.append(best_metrics)
             results_df = pd.DataFrame(results)
-            results_df.to_csv('all_results.csv')
+            results_df.to_csv('results_%s.csv' % start_time)
