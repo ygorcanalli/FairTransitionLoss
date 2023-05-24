@@ -1,0 +1,10 @@
+\begin{tabular}{lrrrrrrrrlrr}
+\toprule
+{} &  Unnamed: 0 &  overall\_acc &   bal\_acc &  avg\_odds\_diff &  disp\_imp &  stat\_par\_diff &  eq\_opp\_diff &  theil\_ind &                method &       agg &   fitness \\
+\midrule
+0 &           0 &     0.846434 &  0.760519 &       0.086728 &  0.292033 &       0.183348 &     0.099377 &   0.125376 &        MLP (baseline) &  0.225863 &  0.620571 \\
+1 &           1 &     0.834936 &  0.738010 &       0.097217 &  0.298825 &       0.171958 &     0.121788 &   0.138638 &  Meta Fair Classifier &  0.232062 &  0.602874 \\
+2 &           2 &     0.846213 &  0.762630 &       0.020343 &  0.407186 &       0.148130 &     0.011630 &   0.127675 &     Prejudice Remover &  0.149972 &  0.696241 \\
+3 &           3 &     0.849198 &  0.746884 &       0.020070 &  0.475481 &       0.109486 &     0.065117 &   0.133790 &  Fair Transition Loss &  0.128958 &  0.720240 \\
+\bottomrule
+\end{tabular}

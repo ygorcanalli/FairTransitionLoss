@@ -1,0 +1,2 @@
+,overall_acc,bal_acc,avg_odds_diff,disp_imp,stat_par_diff,eq_opp_diff,theil_ind,fitness_rule,method
+0,0.8475400773908237,0.7710711653302658,0.1157783332029457,0.30008741111595133,0.1912167574320146,0.14850161974291898,0.11911921189074576,accuracy_only,simple_mlp_initializer
