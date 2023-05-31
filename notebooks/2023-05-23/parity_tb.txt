@@ -1,12 +1,12 @@
 \begin{tabular}{lllll}
 \toprule
-method &  MLP (baseline) & Meta Fair Classifier & Prejudice Remover & Fair Transition Loss \\
+method & MLP (baseline) & Meta Fair Classifier & Prejudice Remover & Fair Transition Loss \\
 \midrule
-Fitness Function   &  0.663 (+0.00\%) &       0.696 (+4.97\%) &   0.802 (+20.98\%) &      0.827 (+24.76\%) \\
-Accuracy           &  0.846 (+0.00\%) &       0.841 (-0.69\%) &    0.827 (-2.32\%) &       0.829 (-2.12\%) \\
-Balanced Accuracy  &  0.761 (+0.00\%) &       0.730 (-4.03\%) &    0.721 (-5.16\%) &       0.702 (-7.68\%) \\
-Statistical Parity &  0.183 (+0.00\%) &      0.145 (-21.18\%) &   0.025 (-86.61\%) &      0.001 (-99.32\%) \\
-Equalized Odds     &  0.087 (+0.00\%) &      0.069 (-20.43\%) &   0.163 (+88.20\%) &     0.174 (+100.40\%) \\
-Equal Opportunity  &  0.099 (+0.00\%) &      0.087 (-12.69\%) &  0.296 (+198.27\%) &     0.312 (+214.05\%) \\
+Fitness Function & 0.695 (+0.00%) & 0.696 (+0.17%) & 0.802 (+15.44%) & 0.827 (+19.05%) \\
+Accuracy & 0.852 (+0.00%) & 0.841 (-1.38%) & 0.827 (-3.00%) & 0.829 (-2.79%) \\
+Balanced Accuracy & 0.774 (+0.00%) & 0.730 (-5.74%) & 0.721 (-6.84%) & 0.702 (-9.32%) \\
+Statistical Parity & 0.157 (+0.00%) & 0.145 (-8.19%) & 0.025 (-84.40%) & 0.001 (-99.21%) \\
+Equalized Odds & 0.042 (+0.00%) & 0.069 (+66.13%) & 0.163 (+292.95%) & 0.174 (+318.42%) \\
+Equal Opportunity & 0.018 (+0.00%) & 0.087 (+376.89%) & 0.296 (+1529.11%) & 0.312 (+1615.27%) \\
 \bottomrule
 \end{tabular}
