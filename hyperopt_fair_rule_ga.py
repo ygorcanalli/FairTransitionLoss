@@ -7,7 +7,7 @@ from aif360.datasets import AdultDataset
 from aif360.metrics import ClassificationMetric
 from models import FairTransitionLossMLP, SimpleMLP
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
-from fitness_rules import linear_parity, linear_odds, linear_opportunity, linear_all, accuracy_only
+from fitness_rules import *
 from sklearn.preprocessing import StandardScaler
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
@@ -28,7 +28,7 @@ mutation_probability = 0.1  # Percentage of genes to mutate. This parameter has 
 keep_parents = 2  # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
 sol_per_pop = 20
 
-def eval_metrics(model, dataset, unprivileged_groups, privileged_groups):
+def eval_metrics(model, dataset, unprivileged_groups, privileged_groups, fitness_rule):
     try:
         # sklearn classifier
         y_pred_prob = model.predict_proba(dataset.features)
@@ -56,6 +56,7 @@ def eval_metrics(model, dataset, unprivileged_groups, privileged_groups):
     metrics['stat_par_diff'] = abs(metric.statistical_parity_difference())
     metrics['eq_opp_diff'] = abs(metric.equal_opportunity_difference())
     metrics['theil_ind'] = abs(metric.theil_index())
+    metrics['fitness'] = fitness_rule(metrics)
 
     return metrics
 
@@ -82,26 +83,24 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
         model = model.fit(scaled_train)
 
 
-        val_metrics = eval_metrics(model, scaled_val, unprivileged_groups, privileged_groups)
-        fitness = fitness_rule(val_metrics)
+        val_metrics = eval_metrics(model, scaled_val, unprivileged_groups, privileged_groups, fitness_rule)
+
         print('-----------------------------------')
         print('Solution %d' % solution_idx)
         print('Solution:', str(solution))
-        print('Fitness:', fitness)
         describe_metrics(val_metrics)
         print('-----------------------------------')
-        return fitness
+        return val_metrics['fitness']
 
     if fitness_rule is not None:
         # best solution
-        gene_type = genes_space[model_initializer.__name__]['type']
-        gene_space = genes_space[model_initializer.__name__]['space']
+        genes_space = get_genes_space(model_initializer)
         ga_instance = pygad.GA(num_generations=num_generations,
                                num_parents_mating=num_parents_mating,
                                fitness_func=fitness_function,
-                               num_genes=len(gene_type),
-                               gene_space=gene_space,
-                               gene_type=gene_type,
+                               num_genes=len(genes_space['type']),
+                               gene_space=genes_space['space'],
+                               gene_type=genes_space['type'],
                                # initial_population=initial_population,
                                sol_per_pop=sol_per_pop,
                                parent_selection_type=parent_selection_type,
@@ -131,7 +130,7 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
     scaled_test = dataset_test.copy()
     scaled_test.features = scaler.transform(scaled_test.features)
 
-    test_metrics = eval_metrics(model, scaled_test, unprivileged_groups, privileged_groups)
+    test_metrics = eval_metrics(model, scaled_test, unprivileged_groups, privileged_groups, fitness_rule)
 
     if fitness_rule is not None:
         test_metrics['fitness_rule'] = fitness_rule.__name__
@@ -165,8 +164,9 @@ def describe_dataset(train=None, val=None, test=None):
     print(test.feature_names)
 
 def describe_metrics(metrics):
+    print("Fitness: {:6.4f}".format(metrics['fitness']))
+    print("Overall accuracy: {:6.4f}".format(metrics['overall_acc']))
     print("Balanced accuracy: {:6.4f}".format(metrics['bal_acc']))
-    print("overall accuracy: {:6.4f}".format(metrics['overall_acc']))
     print("Average odds difference value: {:6.4f}".format(metrics['avg_odds_diff']))
     print("Statistical parity difference value: {:6.4f}".format(metrics['stat_par_diff']))
     print("Equal opportunity difference value: {:6.4f}".format(metrics['eq_opp_diff']))
@@ -264,59 +264,61 @@ def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged
                                      'adv_debias_' + str(datetime.now().timestamp()), tf_old.Session())
     return model
 
+def get_genes_space(model_initializer):
+    genes_space = {
+        'simple_mlp_initializer':  {
+                    'type': [int, float],
+                    'space': [
+                        [128],
+                        {'low': 0.0, 'high': 0.2}
+                    ]
+                },
+        'ftl_mlp_initializer':  {
+                    'type': [int, float, float, float, float, float],
+                    'space': [
+                        [128],
+                        {'low': 0.0, 'high': 0.2},
+                        {'low': 0.0, 'high': 1.0},
+                        {'low': 0.0, 'high': 1.0},
+                        {'low': 0.0, 'high': 1.0},
+                        {'low': 0.0, 'high': 1.0}
+                    ]
+                },
+        'prejudice_remover_initializer':  {
+                    'type': [float],
+                    'space': [
+                        {'low': 0.0, 'high': 50.0}
+                    ]
+                },
+        'meta_fair_classifier_sr_initializer': {
+                    'type': [float],
+                    'space': [
+                        {'low': 0.0, 'high': 2.0}
+                    ]
+                },
+        'meta_fair_classifier_fdr_initializer': {
+                    'type': [float],
+                    'space': [
+                        {'low': 0.0, 'high': 2.0}
+                    ]
+                },
+        'adversarial_debiasing_initializer': {
+                    'type': [int, float],
+                    'space': [
+                        [128],
+                        {'low': 0.0, 'high': 1.0}
+                    ]
+                },
+        'gerry_fair_classifier_initializer': {
+                    'type': [float, float],
+                    'space': [
+                        {'low': 0.0, 'high': 20.0},
+                        [0.1, 0.01, 0.001]
+                    ]
+                },
+    }
 
-genes_space = {
-    'simple_mlp_initializer':  {
-                'type': [int, float],
-                'space': [
-                    [16, 32, 64, 128],
-                    {'low': 0.0, 'high': 0.2}
-                ]
-            },
-    'ftl_mlp_initializer':  {
-                'type': [int, float, float, float, float, float],
-                'space': [
-                    [16, 32, 64, 128],
-                    {'low': 0.0, 'high': 0.2},
-                    {'low': 0.0, 'high': 1.0},
-                    {'low': 0.0, 'high': 1.0},
-                    {'low': 0.0, 'high': 1.0},
-                    {'low': 0.0, 'high': 1.0}
-                ]
-            },
-    'prejudice_remover_initializer':  {
-                'type': [float],
-                'space': [
-                    {'low': 0.0, 'high': 50.0}
-                ]
-            },
-    'meta_fair_classifier_sr_initializer': {
-                'type': [float],
-                'space': [
-                    {'low': 0.0, 'high': 2.0}
-                ]
-            },
-    'meta_fair_classifier_fdr_initializer': {
-                'type': [float],
-                'space': [
-                    {'low': 0.0, 'high': 2.0}
-                ]
-            },
-    'adversarial_debiasing_initializer': {
-                'type': [int, float],
-                'space': [
-                    [32, 64, 128, 256],
-                    {'low': 0.0, 'high': 1.0}
-                ]
-            },
-    'gerry_fair_classifier_initializer': {
-                'type': [float, float],
-                'space': [
-                    {'low': 0.0, 'high': 20.0},
-                    [0.1, 0.01, 0.001]
-                ]
-            },
-}
+    return genes_space[model_initializer.__name__]
 
 datasets = [
     adult_dataset_reader,
@@ -329,16 +331,19 @@ rules = [
 ]
 
 methods = [
-    simple_mlp_initializer
+    #simple_mlp_initializer,
+    #meta_fair_classifier_sr_initializer,
+    #meta_fair_classifier_fdr_initializer,
+    prejudice_remover_initializer,
+    ftl_mlp_initializer
 ]
 
 
 results = []
-results_df = pd.DataFrame(results)
-results_df.to_csv('results_%s.csv' % start_time)
+
 for dataset_reader in datasets:
-    for model_initializer in methods:
-        for fitness_rule in rules:
+    for fitness_rule in rules:
+        for model_initializer in methods:
             best_metrics = evolve_model(dataset_reader, model_initializer, fitness_rule)
             print('Best metrics')
             print('Dataset:', dataset_reader.__name__)
