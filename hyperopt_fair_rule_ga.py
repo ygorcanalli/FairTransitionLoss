@@ -331,9 +331,9 @@ rules = [
 ]
 
 methods = [
-    #simple_mlp_initializer,
-    #meta_fair_classifier_sr_initializer,
-    #meta_fair_classifier_fdr_initializer,
+    simple_mlp_initializer,
+    meta_fair_classifier_sr_initializer,
+    meta_fair_classifier_fdr_initializer,
     prejudice_remover_initializer,
     ftl_mlp_initializer
 ]
