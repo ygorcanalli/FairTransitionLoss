@@ -2,7 +2,7 @@ FROM tensorflow/tensorflow:latest-py3-jupyter
 
 MAINTAINER "Ygor Canalli"
 
-RUN pip3 install pandas sklearn matplotlib optuna aif360 fairlearn pygad mysql-connector-python ray
+RUN pip3 install pandas sklearn matplotlib optuna aif360 fairlearn pygad mysql-connector-python ray seaborn
 COPY jupyter_notebook_config.py /root/.jupyter/
 
 RUN apt install wget
