@@ -2,16 +2,16 @@
 from multiprocessing import Pool
 
 import pandas as pd
+
 from datetime import datetime
-from aif360.datasets import AdultDataset
 from aif360.metrics import ClassificationMetric
-from models import FairTransitionLossMLP, SimpleMLP
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
+from models import FairTransitionLossMLP, SimpleMLP, describe_metrics
 from fitness_rules import *
+from dataset_readers import *
 from sklearn.preprocessing import StandardScaler
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
-import tensorflow as tf
 import numpy as np
 import pygad
 
@@ -144,58 +144,6 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
 
     return test_metrics
 
-def describe_dataset(train=None, val=None, test=None):
-    if train is not None:
-        print("#### Training Dataset shape")
-        print(train.features.shape)
-    if val is not None:
-        print("#### Validation Dataset shape")
-        print(val.features.shape)
-    print("#### Test Dataset shape")
-    print(test.features.shape)
-    print("#### Favorable and unfavorable labels")
-    print(test.favorable_label, test.unfavorable_label)
-    print("#### Protected attribute names")
-    print(test.protected_attribute_names)
-    print("#### Privileged and unprivileged protected attribute values")
-    print(test.privileged_protected_attributes,
-          test.unprivileged_protected_attributes)
-    print("#### Dataset feature names")
-    print(test.feature_names)
-
-def describe_metrics(metrics):
-    print("Fitness: {:6.4f}".format(metrics['fitness']))
-    print("Overall accuracy: {:6.4f}".format(metrics['overall_acc']))
-    print("Balanced accuracy: {:6.4f}".format(metrics['bal_acc']))
-    print("Average odds difference value: {:6.4f}".format(metrics['avg_odds_diff']))
-    print("Statistical parity difference value: {:6.4f}".format(metrics['stat_par_diff']))
-    print("Equal opportunity difference value: {:6.4f}".format(metrics['eq_opp_diff']))
-
-def adult_dataset_reader():
-    label_map = {1.0: '>50K', 0.0: '<=50K'}
-    protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
-    ad = AdultDataset(protected_attribute_names=['sex'],
-                      categorical_features=['workclass', 'education', 'marital-status',
-                                            'occupation', 'relationship', 'native-country', 'race'],
-                      privileged_classes=[['Male']], metadata={'label_map': label_map,
-                                                               'protected_attribute_maps': protected_attribute_maps})
-    (dataset_expanded_train,
-     dataset_test) = AdultDataset().split([0.8], shuffle=True)
-
-    (dataset_train,
-    dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
-    sens_ind = 1
-    sens_attr = dataset_train.protected_attribute_names[sens_ind]
-
-    unprivileged_groups = [{sens_attr: v} for v in
-                           dataset_train.unprivileged_protected_attributes[sens_ind]]
-    privileged_groups = [{sens_attr: v} for v in
-                         dataset_train.privileged_protected_attributes[sens_ind]]
-
-    describe_dataset(dataset_train, dataset_val, dataset_test)
-
-    return dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr
-
 def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, solution=None):
     if solution is not None:
         model = GerryFairClassifier(C=solution[0], gamma=solution[1], fairness_def='FP')
@@ -321,7 +269,7 @@ def get_genes_space(model_initializer):
     return genes_space[model_initializer.__name__]
 
 datasets = [
-    adult_dataset_reader,
+    german_dataset_reader,
 ]
 
 rules = [

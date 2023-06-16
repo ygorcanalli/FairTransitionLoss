@@ -6,6 +6,7 @@ from tensorflow.keras.layers import InputLayer, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
 from aif360.algorithms import Transformer
 from tensorflow.keras import backend as K
+from dataset_readers import adult_dataset_reader
 
 def fair_forward(P_privileged, P_protected):
     """
@@ -174,3 +175,11 @@ class FairTransitionLossMLP(Transformer):
     def predict(self, X):
         logits = self.predict_proba(X)
         return np.argmax(logits, axis=1)
+
+def describe_metrics(metrics):
+    print("Fitness: {:6.4f}".format(metrics['fitness']))
+    print("Overall accuracy: {:6.4f}".format(metrics['overall_acc']))
+    print("Balanced accuracy: {:6.4f}".format(metrics['bal_acc']))
+    print("Average odds difference value: {:6.4f}".format(metrics['avg_odds_diff']))
+    print("Statistical parity difference value: {:6.4f}".format(metrics['stat_par_diff']))
+    print("Equal opportunity difference value: {:6.4f}".format(metrics['eq_opp_diff']))
