@@ -18,15 +18,15 @@ import pygad
 start_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 10 # Number of generations.
-num_parents_mating = 10  # Number of solutions to be selected as parents in the mating pool.
+num_generations = 2 # Number of generations.
+num_parents_mating = 2  # Number of solutions to be selected as parents in the mating pool.
 parent_selection_type = "sss"  # Type of parent selection.
 crossover_type = "single_point"  # Type of the crossover operator.
 crossover_probability = 0.1
 mutation_type = "random"  # Type of the mutation operator.
 mutation_probability = 0.1  # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.
 keep_parents = 2  # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
-sol_per_pop = 20
+sol_per_pop = 2
 
 def eval_metrics(model, dataset, unprivileged_groups, privileged_groups, fitness_rule):
     try:
@@ -81,7 +81,6 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
         scaled_val.features = scaler.transform(scaled_val.features)
 
         model = model.fit(scaled_train)
-
 
         val_metrics = eval_metrics(model, scaled_val, unprivileged_groups, privileged_groups, fitness_rule)
 
@@ -217,14 +216,14 @@ def get_genes_space(model_initializer):
         'simple_mlp_initializer':  {
                     'type': [int, float],
                     'space': [
-                        [128],
+                        [32],
                         {'low': 0.0, 'high': 0.2}
                     ]
                 },
         'ftl_mlp_initializer':  {
                     'type': [int, float, float, float, float, float],
                     'space': [
-                        [128],
+                        [32],
                         {'low': 0.0, 'high': 0.2},
                         {'low': 0.0, 'high': 1.0},
                         {'low': 0.0, 'high': 1.0},
@@ -253,7 +252,7 @@ def get_genes_space(model_initializer):
         'adversarial_debiasing_initializer': {
                     'type': [int, float],
                     'space': [
-                        [128],
+                        [32],
                         {'low': 0.0, 'high': 1.0}
                     ]
                 },
@@ -279,11 +278,10 @@ rules = [
 ]
 
 methods = [
-    simple_mlp_initializer,
-    meta_fair_classifier_sr_initializer,
-    meta_fair_classifier_fdr_initializer,
+    ftl_mlp_initializer,
     prejudice_remover_initializer,
-    ftl_mlp_initializer
+    simple_mlp_initializer,
+    meta_fair_classifier_fdr_initializer
 ]
 
 
