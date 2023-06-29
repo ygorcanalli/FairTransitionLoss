@@ -39,10 +39,10 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, s
         y_pred_prob = model.predict(dataset).scores
         pos_ind = 0
 
-    y_val_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
+    y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
 
     dataset_pred = dataset.copy()
-    dataset_pred.labels = y_val_pred
+    dataset_pred.labels = y_pred
     metric = ClassificationMetric(
             dataset, dataset_pred,
             unprivileged_groups=unprivileged_groups,
@@ -147,7 +147,14 @@ def evolve_model(dataset_reader, model_initializer, fitness_rule):
     best_result['method'] = model_initializer.__name__
     print('-----------------------------------')
     best_result['ga_history'] = ga_val_metrics_history
-    best_result['best_solution_tf_history'] = model.history.history
+
+    try:
+        # tk classifier
+        best_result['best_solution_tf_history'] = model.history.history
+    except AttributeError:
+        # aif360 inprocessing algorithm
+        best_result['best_solution_tf_history'] = None
+
 
     return best_result
 
@@ -280,19 +287,20 @@ datasets = [
 ]
 
 rules = [
-    mcc_parity,
-    mcc_odds,
-    mcc_opportunity,
-    acc_parity,
-    acc_odds,
-    acc_opportunity
+    mcc_parity
+    #mcc_odds
+    #mcc_opportunity
+    #acc_parity,
+    #acc_odds,
+    #acc_opportunity
 ]
 
 methods = [
+    simple_mlp_initializer,
     ftl_mlp_initializer,
-    meta_fair_classifier_fdr_initializer,
     prejudice_remover_initializer,
-    simple_mlp_initializer
+    gerry_fair_classifier_initializer,
+    adversarial_debiasing_initializer,
 ]
 
 results = []

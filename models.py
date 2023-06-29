@@ -66,7 +66,7 @@ class SimpleMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
                  hidden_sizes=[32, 64, 32], dropout=0.1,
-                 num_epochs=50, batch_size=16, patience=5):
+                 num_epochs=20, batch_size=16, patience=5):
 
         self.model = None
         self.hidden_sizes = hidden_sizes
@@ -124,7 +124,7 @@ class FairTransitionLossMLP(Transformer):
                  privileged_demotion=0.1, privileged_promotion=0.01,
                  protected_demotion=0.01, protected_promotion=0.1,
                  hidden_sizes=[32, 64, 32], dropout=0.1, patience=5,
-                 num_epochs=50, batch_size=16):
+                 num_epochs=20, batch_size=16):
         self.p_privileged = np.array([[1 - privileged_demotion, privileged_demotion],
                                       [privileged_promotion, 1 - privileged_promotion]])
         self.p_protected = np.array([[1 - protected_demotion, protected_demotion],
