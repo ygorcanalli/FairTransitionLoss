@@ -6,7 +6,11 @@ from tensorflow.keras.layers import InputLayer, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
 from aif360.algorithms import Transformer
 from tensorflow.keras import backend as K
-from dataset_readers import adult_dataset_reader
+
+
+#tentar otimizar com outras métricas de performance
+#estudar balanceamento dos dados
+#verificar mudança de erro de valicação e treino ao longo das épocas
 
 def fair_forward(P_privileged, P_protected):
     """
@@ -62,7 +66,7 @@ class SimpleMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
                  hidden_sizes=[32, 64, 32], dropout=0.1,
-                 num_epochs=50, batch_size=16, patience=3):
+                 num_epochs=50, batch_size=16, patience=5):
 
         self.model = None
         self.hidden_sizes = hidden_sizes
@@ -74,6 +78,7 @@ class SimpleMLP(Transformer):
         self.patience = patience
         self.sensitive_attr = sensitive_attr
         self.classes_ = None
+        self.history = None
 
     def _compile_model(self):
         self.model = Sequential()
@@ -100,9 +105,9 @@ class SimpleMLP(Transformer):
         y_expanded[:,0] = (dataset_cp.labels == dataset_cp.unfavorable_label).reshape(X.shape[0]).astype(int)
         y_expanded[:,1] = (dataset_cp.labels == dataset_cp.favorable_label).reshape(X.shape[0]).astype(int)
 
-        self.model.fit(X, y_expanded, epochs=self.num_epochs,
-                       batch_size=self.batch_size,# callbacks=[callback],
-                       verbose=verbose)
+        self.history = self.model.fit(X, y_expanded, epochs=self.num_epochs,
+                       batch_size=self.batch_size, callbacks=[callback],
+                       verbose=verbose, validation_split=0.1)
 
         return self
 
@@ -118,7 +123,7 @@ class FairTransitionLossMLP(Transformer):
     def __init__(self, sensitive_attr='',
                  privileged_demotion=0.1, privileged_promotion=0.01,
                  protected_demotion=0.01, protected_promotion=0.1,
-                 hidden_sizes=[32, 64, 32], dropout=0.1, patience=3,
+                 hidden_sizes=[32, 64, 32], dropout=0.1, patience=5,
                  num_epochs=50, batch_size=16):
         self.p_privileged = np.array([[1 - privileged_demotion, privileged_demotion],
                                       [privileged_promotion, 1 - privileged_promotion]])
@@ -134,6 +139,7 @@ class FairTransitionLossMLP(Transformer):
         self.patience = patience
         self.sensitive_attr = sensitive_attr
         self.classes_ = None
+        self.history = None
 
     def _compile_model(self):
         self.model = Sequential()
@@ -144,7 +150,7 @@ class FairTransitionLossMLP(Transformer):
             self.model.add(Dropout(self.dropout))
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
-        self.model.compile(optimizer='adam',
+        self.model.compile(optimizer='adam', metrics=['accuracy'],
                            loss=fair_forward(self.p_privileged, self.p_protected))
     def fit(self, dataset, verbose=False):
         if self.model is None:
@@ -163,9 +169,9 @@ class FairTransitionLossMLP(Transformer):
         y_expanded[:,2] = (dataset.labels == dataset.unfavorable_label).reshape(X.shape[0]).astype(int)
         y_expanded[:,3] = (dataset.labels == dataset.favorable_label).reshape(X.shape[0]).astype(int)
 
-        self.model.fit(X, y_expanded, epochs=self.num_epochs,
-                       batch_size=self.batch_size,# callbacks=[callback],
-                       verbose=verbose)
+        self.history = self.model.fit(X, y_expanded, epochs=self.num_epochs,
+                       batch_size=self.batch_size, callbacks=[callback],
+                       verbose=verbose, validation_split=0.1)
 
         return self
 
@@ -179,6 +185,8 @@ class FairTransitionLossMLP(Transformer):
 def describe_metrics(metrics):
     print("Fitness: {:6.4f}".format(metrics['fitness']))
     print("Overall accuracy: {:6.4f}".format(metrics['overall_acc']))
+    print("F1 Score: {:6.4f}".format(metrics['f1_score']))
+    print("Mathew Correlation Coefficient: {:6.4f}".format(metrics['MCC']))
     print("Balanced accuracy: {:6.4f}".format(metrics['bal_acc']))
     print("Average odds difference value: {:6.4f}".format(metrics['avg_odds_diff']))
     print("Statistical parity difference value: {:6.4f}".format(metrics['stat_par_diff']))

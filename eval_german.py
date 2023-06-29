@@ -44,7 +44,7 @@ def eval_metrics(model, dataset, unprivileged_groups, privileged_groups):
 #privileged_classes=[['Male']], metadata={'label_map': label_map,
 #                    'protected_attribute_maps': protected_attribute_maps})
 data = GermanDataset()
-data.instance_weights[data.labels[:,0] == 2.0] = 5.0
+#data.instance_weights[data.labels[:,0] == 2.0] = 5.0
 (dataset_expanded_train,
  dataset_test) = data.split([0.8])
 
@@ -58,12 +58,13 @@ unprivileged_groups = [{sens_attr: v} for v in
 privileged_groups = [{sens_attr: v} for v in
                      dataset_train.privileged_protected_attributes[sens_ind]]
 
-model = FairTransitionLossMLP(sensitive_attr=sens_attr, dropout=0.2,
-                 num_epochs=30, batch_size=32, hidden_sizes=[100,100],
-                 privileged_demotion=0, privileged_promotion=0,
-                 protected_demotion=0, protected_promotion=0)
+#model = FairTransitionLossMLP(sensitive_attr=sens_attr, dropout=0.2,
+                 #num_epochs=30, batch_size=32, hidden_sizes=[100,100],
+                 #privileged_demotion=0, privileged_promotion=0,
+                 #protected_demotion=0, protected_promotion=0)
 #model = MetaFairClassifier(sensitive_attr=sens_attr, type='sr')
 #model = PrejudiceRemover(sensitive_attr=sens_attr)
+model = SimpleMLP(sensitive_attr=sens_attr)
 
 model = model.fit(dataset_train)
 
