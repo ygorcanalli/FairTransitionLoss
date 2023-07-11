@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import tensorflow.compat.v1 as tf_old
 tf_old.disable_eager_execution()
 import numpy as np
+import gc
 import json
 import os
 import optuna
@@ -79,9 +80,6 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
     scaler = StandardScaler()
     dataset_expanded_train.features = scaler.fit_transform(dataset_expanded_train.features)
     dataset_test.features = scaler.transform(dataset_test.features)
-    def callback_generation(ga_instance):
-        print("Generation = {generation}".format(generation=ga_instance.generations_completed))
-        print("Fitness    = {fitness}".format(fitness=ga_instance.best_solution()[1]))
 
     def objective(trial):
         # training
@@ -101,7 +99,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
                                     pruner=get_pruner(),
                                     sampler=get_sampler())
 
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=8)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
 
         # eval on test set
         model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, study.best_params)
@@ -133,7 +131,10 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
 
 def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
     hidden_sizes = [100,100]
-    dropout = 0.2
+    if type(hyperparameters) is not dict:
+        dropout = hyperparameters.suggest_float('dropout', 0.0, 0.2)
+    else:
+        dropout = hyperparameters['dropout']
     if type(hyperparameters) is not dict:
         privileged_demotion = hyperparameters.suggest_float('privileged_demotion', 0.0, 1.0)
         privileged_promotion = hyperparameters.suggest_float('privileged_promotion', 0.0, 1.0)
@@ -247,7 +248,8 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 datasets = [
-    adult_dataset_reader,
+    #german_dataset_reader,
+    adult_dataset_reader
 ]
 
 rules = [
@@ -286,3 +288,4 @@ for dataset_reader in datasets:
             results_df.to_csv('raw_results/results_%s.csv' % start_time)
             with open('raw_results/results_%s.json' % start_time, 'w') as file:
                 json.dump(results, file)
+            gc.collect()

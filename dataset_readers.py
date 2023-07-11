@@ -28,10 +28,10 @@ def german_dataset_reader():
     #                    'protected_attribute_maps': protected_attribute_maps})
     data = GermanDataset()
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8])
+     dataset_test) = data.split([0.8], shuffle=True)
 
     (dataset_train,
-     dataset_val) = dataset_expanded_train.split([0.8])
+     dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
     sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
@@ -53,10 +53,10 @@ def adult_dataset_reader():
                       privileged_classes=[['Male']], metadata={'label_map': label_map,
                                                                'protected_attribute_maps': protected_attribute_maps})
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8])
+     dataset_test) = data.split([0.8], shuffle=True)
 
     (dataset_train,
-    dataset_val) = dataset_expanded_train.split([0.8])
+    dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
     sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
