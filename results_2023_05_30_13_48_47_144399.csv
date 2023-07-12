@@ -1,2 +1,0 @@
-,overall_acc,bal_acc,avg_odds_diff,disp_imp,stat_par_diff,eq_opp_diff,theil_ind,fitness,fitness_rule,method
-0,0.8398009950248756,0.7372299346523781,0.08220300159338662,0.30713097923248595,0.1567055891845054,0.10534644050139153,0.1420101496666423,0.6830954058403702,linear_parity,meta_fair_classifier_sr_initializer
