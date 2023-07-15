@@ -16,7 +16,7 @@ import optuna
 from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
-N_TRIALS = 50
+N_TRIALS = 100
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING')
@@ -35,12 +35,13 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
         # sklearn classifier
         y_pred_prob = model.predict_proba(dataset.features)
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
+        y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
     except AttributeError:
         # aif360 inprocessing algorithm
-        y_pred_prob = model.predict(dataset).scores
+        y_pred = model.predict(dataset).labels#.scores
         pos_ind = 0
 
-    y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
+
 
     dataset_pred = dataset.copy()
     dataset_pred.labels = y_pred
@@ -118,6 +119,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
     print('-----------------------------------')
     describe_metrics(best_result)
     best_result['method'] = model_initializer.__name__
+    best_result['dataset'] = dataset_reader.__name__
     print('-----------------------------------')
 
     try:
@@ -262,11 +264,11 @@ rules = [
 ]
 
 methods = [
-    simple_mlp_initializer,
-    ftl_mlp_initializer,
     prejudice_remover_initializer,
     gerry_fair_classifier_initializer,
-    adversarial_debiasing_initializer,
+    simple_mlp_initializer,
+    ftl_mlp_initializer,
+    adversarial_debiasing_initializer
 ]
 
 results = []
