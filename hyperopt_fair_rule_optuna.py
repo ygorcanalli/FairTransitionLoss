@@ -24,6 +24,8 @@ if CONNECTION_STRING is None:
     CONNECTION_STRING = 'mysql+pymysql://optuna:optuna@localhost:3306/optuna'
 start_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
 
+tf_old.compat.v1.disable_eager_execution()
+
 def get_sampler():
     return TPESampler()
 
@@ -38,10 +40,7 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
         y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
     except AttributeError:
         # aif360 inprocessing algorithm
-        y_pred = model.predict(dataset).labels#.scores
-        pos_ind = 0
-
-
+        y_pred = model.predict(dataset).labels
 
     dataset_pred = dataset.copy()
     dataset_pred.labels = y_pred
@@ -85,8 +84,8 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
     def objective(trial):
         # training
         trial_model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, trial)
-        trial_model = trial_model.fit(dataset_train)
-        result = eval(trial_model, dataset_val, unprivileged_groups, privileged_groups, fitness_rule, trial)
+        trial_model = trial_model.fit(dataset_train.copy())
+        result = eval(trial_model, dataset_val.copy(), unprivileged_groups, privileged_groups, fitness_rule, trial)
         tune_results_history.append(result)
         return result['fitness']
 
@@ -152,7 +151,7 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
         model = FairTransitionLossMLP(sensitive_attr=sens_attr,
                                       hidden_sizes=hidden_sizes,
                                       dropout=dropout,
-                                      batch_size=32,
+                                      batch_size=64,
                                       privileged_demotion=privileged_demotion,
                                       privileged_promotion=privileged_promotion,
                                       protected_demotion=protected_demotion,
@@ -161,7 +160,7 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
         model = FairTransitionLossMLP(sensitive_attr=sens_attr,
                                       hidden_sizes=[32],
                                       dropout=0.1,
-                                      batch_size=32)
+                                      batch_size=64)
     return model
 
 def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
@@ -174,12 +173,12 @@ def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hy
         model = SimpleMLP(sensitive_attr=sens_attr,
                         hidden_sizes=hidden_sizes,
                         dropout=dropout,
-                        batch_size=32)
+                        batch_size=64)
     else:
         model = SimpleMLP(sensitive_attr=sens_attr,
                         hidden_sizes=[32],
                         dropout=0.1,
-                        batch_size=32)
+                        batch_size=64)
     return model
 
 def prejudice_remover_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
@@ -251,24 +250,26 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
 
 datasets = [
     #german_dataset_reader,
-    adult_dataset_reader
+    #adult_dataset_reader,
+    compas_dataset_reader
 ]
 
 rules = [
     mcc_parity,
-    mcc_odds,
+    #mcc_odds,
     mcc_opportunity,
     acc_parity,
-    acc_odds,
+    #acc_odds
     acc_opportunity
 ]
 
 methods = [
-    prejudice_remover_initializer,
-    gerry_fair_classifier_initializer,
+    #meta_fair_classifier_sr_initializer,
     simple_mlp_initializer,
     ftl_mlp_initializer,
-    adversarial_debiasing_initializer
+    adversarial_debiasing_initializer,
+    prejudice_remover_initializer,
+    gerry_fair_classifier_initializer
 ]
 
 results = []

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8c95e788e53227cf1a100c0e827a1eab7cb4e94c82b12d238571e99ac3b5e698"
+            "sha256": "28fc2caa52a0f6626150420fe076e222db999fc16bad746ac349725e033ebf38"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -25,6 +25,9 @@
             "version": "==1.4.0"
         },
         "aif360": {
+            "extras": [
+                "lawschoolgpa"
+            ],
             "hashes": [
                 "sha256:5e45d86ed19d261ea4fa9cb9df13eff3aa39411746fb87793172ae3762a152db",
                 "sha256:a03b3a61fa6a912ede3cc75724a95b4ab06695e500f957527da0dfc40d664f5d"
