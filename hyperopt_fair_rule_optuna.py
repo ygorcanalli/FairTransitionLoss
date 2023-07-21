@@ -17,6 +17,7 @@ from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
 N_TRIALS = 100
+N_JOBS = 6
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING')
@@ -99,7 +100,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
                                     pruner=get_pruner(),
                                     sampler=get_sampler())
 
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS)
 
         # eval on test set
         model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, study.best_params)
@@ -250,16 +251,16 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
 
 datasets = [
     #german_dataset_reader,
-    #adult_dataset_reader,
-    compas_dataset_reader
+    adult_dataset_reader,
+    #compas_dataset_reader
 ]
 
 rules = [
     mcc_parity,
-    #mcc_odds,
+    mcc_odds,
     mcc_opportunity,
     acc_parity,
-    #acc_odds
+    acc_odds,
     acc_opportunity
 ]
 
