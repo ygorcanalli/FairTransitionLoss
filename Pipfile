@@ -176,6 +176,7 @@ wrapt = "==1.14.1"
 zipp = "==3.15.0"
 pymysql = "*"
 aif360 = {extras = ["lawschoolgpa"], version = "*"}
+deepsig = "*"
 
 [dev-packages]
 
