@@ -17,7 +17,7 @@ from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
 N_TRIALS = 100
-N_JOBS = 3
+N_JOBS = 5
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING')
@@ -250,8 +250,8 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 datasets = [
-    #german_dataset_reader,
-    adult_dataset_reader,
+    german_dataset_reader,
+    #adult_dataset_reader,
     #compas_dataset_reader
 ]
 
@@ -266,11 +266,11 @@ rules = [
 
 methods = [
     #meta_fair_classifier_sr_initializer,
+    #gerry_fair_classifier_initializer,
     simple_mlp_initializer,
     ftl_mlp_initializer,
     adversarial_debiasing_initializer,
-    prejudice_remover_initializer,
-    gerry_fair_classifier_initializer
+    prejudice_remover_initializer
 ]
 
 results = []
