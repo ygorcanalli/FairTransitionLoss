@@ -1,10 +1,4 @@
-from aif360.datasets import GermanDataset
-from aif360.algorithms.inprocessing import PrejudiceRemover, MetaFairClassifier
-from models import describe_metrics, SimpleMLP, FairTransitionLossMLP
-import fitness_rules
-from fitness_rules import *
-from aif360.metrics import ClassificationMetric
-from pprint import pprint
+
 
 
 def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule):
@@ -38,15 +32,21 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule):
     metrics['fitness'] = fitness_rule(metrics)
     return metrics
 
-#label_map = {1: 'Good Credit', 2: 'Bad Credit'}
-#protected_attribute_maps = [{1: 'Male', 0: 'Female'}]
-#data = GermanDataset(protected_attribute_names=['sex'],
-#privileged_classes=[['Male']], metadata={'label_map': label_map,
-#                    'protected_attribute_maps': protected_attribute_maps})
-data = GermanDataset()
-#data.instance_weights[data.labels[:,0] == 2.0] = 5.0
+data = CompasDataset()
 (dataset_expanded_train,
- dataset_test) = data.split([0.8])
+ dataset_test) = data.split([0.8], shuffle=True)
+
+(dataset_train,
+ dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+sens_ind = 1
+sens_attr = dataset_train.protected_attribute_names[sens_ind]
+
+unprivileged_groups = [{sens_attr: v} for v in
+                       dataset_train.unprivileged_protected_attributes[sens_ind]]
+privileged_groups = [{sens_attr: v} for v in
+                     dataset_train.privileged_protected_attributes[sens_ind]]
+
+describe_dataset(dataset_train, dataset_val, dataset_test)
 
 (dataset_train,
  dataset_val) = dataset_expanded_train.split([0.8])
@@ -65,8 +65,7 @@ privileged_groups = [{sens_attr: v} for v in
 #model = MetaFairClassifier(sensitive_attr=sens_attr, type='sr')
 #model = PrejudiceRemover(sensitive_attr=sens_attr)
 model = SimpleMLP(sensitive_attr=sens_attr)
-
-model = model.fit(dataset_train)
+model = model.fit(dataset_train,verbose=True)
 
 val_metrics = eval(model, dataset_val, unprivileged_groups, privileged_groups, mcc_odds)
 test_metrics = eval(model, dataset_test, unprivileged_groups, privileged_groups, mcc_odds)

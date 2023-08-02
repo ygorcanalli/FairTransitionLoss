@@ -4,6 +4,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.losses import binary_crossentropy
 from tensorflow.keras.layers import InputLayer, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers.legacy import Adam
 from aif360.algorithms import Transformer
 from tensorflow.keras import backend as K
 
@@ -66,7 +67,7 @@ class SimpleMLP(Transformer):
 
     def __init__(self, sensitive_attr='',
                  hidden_sizes=[32, 64, 32], dropout=0.1,
-                 num_epochs=20, batch_size=16, patience=5):
+                 num_epochs=20, batch_size=64, patience=5):
 
         self.model = None
         self.hidden_sizes = hidden_sizes
@@ -89,7 +90,7 @@ class SimpleMLP(Transformer):
             self.model.add(Dropout(self.dropout))
 
         self.model.add(Dense(self.num_classes, activation="softmax"))
-        self.model.compile(optimizer='adam', metrics=['accuracy'],
+        self.model.compile(optimizer=Adam(learning_rate=3e-4),
                            loss='categorical_crossentropy')
     def fit(self, dataset, verbose=False):
         if self.model is None:
@@ -97,7 +98,7 @@ class SimpleMLP(Transformer):
             self._compile_model()
             self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
 
-        callback = EarlyStopping(monitor='loss', patience=self.patience)
+        callback = EarlyStopping(monitor='val_loss', patience=self.patience, restore_best_weights=True)
         dataset_cp = dataset.copy()
         X = dataset_cp.features
         y_expanded = np.zeros( shape=(X.shape[0], 2) )
@@ -124,7 +125,7 @@ class FairTransitionLossMLP(Transformer):
                  privileged_demotion=0.1, privileged_promotion=0.01,
                  protected_demotion=0.01, protected_promotion=0.1,
                  hidden_sizes=[32, 64, 32], dropout=0.1, patience=5,
-                 num_epochs=20, batch_size=16):
+                 num_epochs=50, batch_size=64):
         self.p_privileged = np.array([[1 - privileged_demotion, privileged_demotion],
                                       [privileged_promotion, 1 - privileged_promotion]])
         self.p_protected = np.array([[1 - protected_demotion, protected_demotion],
@@ -149,8 +150,9 @@ class FairTransitionLossMLP(Transformer):
             self.model.add(Dense(hidden_size, activation='relu'))
             self.model.add(Dropout(self.dropout))
 
+
         self.model.add(Dense(self.num_classes, activation="softmax"))
-        self.model.compile(optimizer='adam', metrics=['accuracy'],
+        self.model.compile(optimizer=Adam(learning_rate=3e-4),
                            loss=fair_forward(self.p_privileged, self.p_protected))
     def fit(self, dataset, verbose=False):
         if self.model is None:
@@ -158,7 +160,7 @@ class FairTransitionLossMLP(Transformer):
             self._compile_model()
             self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
 
-        callback = EarlyStopping(monitor='loss', patience=self.patience)
+        callback = EarlyStopping(monitor='val_loss', patience=self.patience, restore_best_weights=True)
 
         X = dataset.features
         y_expanded = np.zeros( shape=(X.shape[0], 4) )

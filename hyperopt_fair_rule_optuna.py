@@ -16,13 +16,16 @@ import optuna
 from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
-N_TRIALS = 50
+N_TRIALS = 100
+N_JOBS = 5
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING')
 if CONNECTION_STRING is None:
     CONNECTION_STRING = 'mysql+pymysql://optuna:optuna@localhost:3306/optuna'
 start_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
+
+tf_old.compat.v1.disable_eager_execution()
 
 def get_sampler():
     return TPESampler()
@@ -35,12 +38,10 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
         # sklearn classifier
         y_pred_prob = model.predict_proba(dataset.features)
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
+        y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
     except AttributeError:
         # aif360 inprocessing algorithm
-        y_pred_prob = model.predict(dataset).scores
-        pos_ind = 0
-
-    y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
+        y_pred = model.predict(dataset).labels
 
     dataset_pred = dataset.copy()
     dataset_pred.labels = y_pred
@@ -84,8 +85,8 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
     def objective(trial):
         # training
         trial_model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, trial)
-        trial_model = trial_model.fit(dataset_train)
-        result = eval(trial_model, dataset_val, unprivileged_groups, privileged_groups, fitness_rule, trial)
+        trial_model = trial_model.fit(dataset_train.copy())
+        result = eval(trial_model, dataset_val.copy(), unprivileged_groups, privileged_groups, fitness_rule, trial)
         tune_results_history.append(result)
         return result['fitness']
 
@@ -99,7 +100,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
                                     pruner=get_pruner(),
                                     sampler=get_sampler())
 
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=6)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS)
 
         # eval on test set
         model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, study.best_params)
@@ -118,6 +119,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
     print('-----------------------------------')
     describe_metrics(best_result)
     best_result['method'] = model_initializer.__name__
+    best_result['dataset'] = dataset_reader.__name__
     print('-----------------------------------')
 
     try:
@@ -150,7 +152,7 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
         model = FairTransitionLossMLP(sensitive_attr=sens_attr,
                                       hidden_sizes=hidden_sizes,
                                       dropout=dropout,
-                                      batch_size=32,
+                                      batch_size=64,
                                       privileged_demotion=privileged_demotion,
                                       privileged_promotion=privileged_promotion,
                                       protected_demotion=protected_demotion,
@@ -159,7 +161,7 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
         model = FairTransitionLossMLP(sensitive_attr=sens_attr,
                                       hidden_sizes=[32],
                                       dropout=0.1,
-                                      batch_size=32)
+                                      batch_size=64)
     return model
 
 def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
@@ -172,12 +174,12 @@ def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hy
         model = SimpleMLP(sensitive_attr=sens_attr,
                         hidden_sizes=hidden_sizes,
                         dropout=dropout,
-                        batch_size=32)
+                        batch_size=64)
     else:
         model = SimpleMLP(sensitive_attr=sens_attr,
                         hidden_sizes=[32],
                         dropout=0.1,
-                        batch_size=32)
+                        batch_size=64)
     return model
 
 def prejudice_remover_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
@@ -248,8 +250,9 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 datasets = [
-    #german_dataset_reader,
-    adult_dataset_reader
+    german_dataset_reader,
+    #adult_dataset_reader,
+    #compas_dataset_reader
 ]
 
 rules = [
@@ -262,11 +265,12 @@ rules = [
 ]
 
 methods = [
+    #meta_fair_classifier_sr_initializer,
+    #gerry_fair_classifier_initializer,
     simple_mlp_initializer,
     ftl_mlp_initializer,
-    prejudice_remover_initializer,
-    gerry_fair_classifier_initializer,
     adversarial_debiasing_initializer,
+    prejudice_remover_initializer
 ]
 
 results = []
