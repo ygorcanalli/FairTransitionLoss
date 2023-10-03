@@ -244,34 +244,34 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
         C = hyperparameters['C']
         gamma = hyperparameters['gamma']
     if hyperparameters is not None:
-        model = GerryFairClassifier(C=C, gamma=gamma, fairness_def='FP')
+        model = GerryFairClassifier(C=C, gamma=gamma, fairness_def='FN')
     else:
-        model = GerryFairClassifier(fairness_def='FP')
+        model = GerryFairClassifier(fairness_def='FN')
     return model
 
 datasets = [
-    #bank_dataset_reader
-    #german_dataset_reader,
-    adult_dataset_reader
-    #compas_dataset_reader
+    adult_dataset_reader,
+    bank_dataset_reader,
+    compas_dataset_reader
+    #german_dataset_reader
 ]
 
 rules = [
-    #mcc_parity,
-    #cc_odds,
-    #mcc_opportunity,
-    #acc_parity,
-    #acc_odds,
+    mcc_parity,
+    mcc_odds,
+    mcc_opportunity,
+    acc_parity,
+    acc_odds,
     acc_opportunity
 ]
 
 methods = [
     #meta_fair_classifier_sr_initializer,
-    gerry_fair_classifier_initializer,
+    gerry_fair_classifier_initializer
     #simple_mlp_initializer,
     #ftl_mlp_initializer,
-    adversarial_debiasing_initializer,
-    prejudice_remover_initializer
+    #adversarial_debiasing_initializer,
+    #prejudice_remover_initializer
 ]
 
 results = []
