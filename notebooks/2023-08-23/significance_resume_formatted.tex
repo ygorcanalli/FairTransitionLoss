@@ -1,0 +1,39 @@
+\begin{table}[]
+    \centering
+    \caption{Almost Stochastic Order test comparing Fair Transition Loss to each method in different optimization scenarios. Values under $0.5$ mean that we can reject the null hypothesis, and then Fair Transition Loss presents better results. Lower this value, the better the evidence.}
+    \footnotesize{
+    \begin{tabular}{ll|cccc}
+        Objective & Dataset & \shortstack[c]{Standard\\MLP} & \shortstack[c]{Adversarial\\Debiasing} & \shortstack[c]{Prejudice\\Remover} & \shortstack[c]{Gerry Fair\\Classifier} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{Acc. and \\Eq. Odds\\\\Equation~\ref{opt:acc_odds}}} & Adult Income & \textbf{0.009395} & 0.225552 & 0.170713 & \textbf{0.000000} \\
+         & Bank Market & 0.775530 & 0.386310 & 0.814048 & 1.000000 \\
+         & Compas Recidivism & \textbf{0.006612} & 0.471443 & \textbf{0.000000} & \textbf{0.001646} \\
+         & German Credit & 1.000000 & 0.429356 & 0.969500 & \textbf{0.000000} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{Acc. and \\Eq. Opp.\\\\Equation~\ref{opt:acc_opp}}}& Adult Income & 0.898703 & 0.959536 & 1.000000 & 0.204228 \\
+         & Bank Market & 1.000000 & 0.369527 & 0.819028 & 1.000000 \\
+         & Compas Recidivism & \textbf{0.009027} & \textbf{0.792935} & \textbf{0.000000} & \textbf{0.107667} \\
+         & German Credit & \textbf{0.014195} & \textbf{0.082456} & \textbf{0.000000} & \textbf{0.000000} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{Acc. and \\Stat. Parity\\\\Equation~\ref{opt:acc_parity}}} & Adult Income & \textbf{0.006226} & 0.252930 & 0.305378 & \textbf{0.000000} \\
+         & Bank Market & 0.235047 & 1.000000 & 1.000000 & 0.763300 \\
+         & Compas Recidivism & \textbf{0.002008} & 1.000000 & \textbf{0.107223} & 1.000000 \\
+         & German Credit & 1.000000 & 0.469207 & 1.000000 & \textbf{0.000000} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{MCC and \\Eq. Odds\\\\Equation~\ref{opt:mcc_odds}}} & Adult Income & \textbf{0.027618} & 0.254582 & 0.421574 & \textbf{0.000000} \\
+         & Bank Market & 0.471688 & 0.189642 & 0.108138 & \textbf{0.027290} \\
+         & Compas Recidivism & \textbf{0.005317} & \textbf{0.582610} & \textbf{0.000000} & \textbf{0.056215} \\
+         & German Credit & 1.000000 & 1.000000 & 1.000000 & \textbf{0.000000} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{MCC and \\Eq. Opp.\\\\Equation~\ref{opt:mcc_opp}}}  & Adult Income & \textbf{0.008614} & \textbf{0.003219} & \textbf{0.058228} & \textbf{0.000000} \\
+         & Bank Market & 0.820683 & \textbf{0.180293} & \textbf{0.236480} & \textbf{0.152576} \\
+         & Compas Recidivism & \textbf{0.004837} & 1.000000 & \textbf{0.000000} & \textbf{0.183791} \\
+         & German Credit & 1.000000 & 1.000000 & 1.000000 & \textbf{0.000000} \\
+        \hline
+        \multirow{4}{*}{\shortstack[l]{MCC and \\Stat. Parity\\\\Equation~\ref{opt:mcc_parity}}} & Adult Income & \textbf{0.004620} & 0.152866 & 1.000000 & \textbf{0.000000} \\
+         & Bank Market & \textbf{0.008002} & \textbf{0.000000} & \textbf{0.000000} & \textbf{0.000000} \\
+         & Compas Recidivism & \textbf{0.005095} & 0.211472 & \textbf{0.000000} & \textbf{0.001872} \\
+         & German Credit & \textbf{0.362420} & 1.000000 & 0.475996 & \textbf{0.000000} \\
+    \end{tabular}
+    }
+\end{table}

@@ -1,4 +1,4 @@
-from aif360.datasets import AdultDataset, GermanDataset, CompasDataset
+from aif360.datasets import AdultDataset, GermanDataset, CompasDataset, BankDataset
 
 def describe_dataset(train=None, val=None, test=None):
     if train is not None:
@@ -78,6 +78,26 @@ def compas_dataset_reader():
     (dataset_train,
      dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
     sens_ind = 1
+    sens_attr = dataset_train.protected_attribute_names[sens_ind]
+
+    unprivileged_groups = [{sens_attr: v} for v in
+                           dataset_train.unprivileged_protected_attributes[sens_ind]]
+    privileged_groups = [{sens_attr: v} for v in
+                         dataset_train.privileged_protected_attributes[sens_ind]]
+
+    describe_dataset(dataset_train, dataset_val, dataset_test)
+
+    return dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr
+
+def bank_dataset_reader():
+
+    data = BankDataset()
+    (dataset_expanded_train,
+     dataset_test) = data.split([0.8], shuffle=True)
+
+    (dataset_train,
+     dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+    sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
     unprivileged_groups = [{sens_attr: v} for v in
