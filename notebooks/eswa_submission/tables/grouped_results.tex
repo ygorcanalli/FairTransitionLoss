@@ -4,137 +4,11 @@
  &  &  &  &  &  \\
 Fitness Rule Abvr & dataset & method &  &  &  \\
 \midrule
-\multirow[t]{20}{*}{Max(MCC - Stat. Parity)} & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.200 (\pm0.17)$ & $0.368 (\pm0.06)$ & $0.168 (\pm0.15)$ \\
- &  & Gerry Fair Classifier & $-0.031 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.031 (\pm0.05)$ \\
- &  & Fair Transition Loss & $-0.034 (\pm0.07)$ & $0.000 (\pm0.00)$ & $0.034 (\pm0.07)$ \\
- &  & Prejudice Remover & $-0.083 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.083 (\pm0.05)$ \\
- &  & Standard MLP (baseline) & $-0.090 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.090 (\pm0.06)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.220 (\pm0.06)$ & $0.276 (\pm0.03)$ & $0.057 (\pm0.05)$ \\
- &  & Adversarial Debiasing & $0.157 (\pm0.14)$ & $0.322 (\pm0.02)$ & $0.165 (\pm0.14)$ \\
- &  & Gerry Fair Classifier & $0.141 (\pm0.04)$ & $0.289 (\pm0.06)$ & $0.148 (\pm0.06)$ \\
- &  & Prejudice Remover & $-0.318 (\pm0.05)$ & $-0.276 (\pm0.03)$ & $0.042 (\pm0.03)$ \\
- &  & Standard MLP (baseline) & $-0.511 (\pm0.05)$ & $-0.299 (\pm0.03)$ & $0.212 (\pm0.04)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.539 (\pm0.03)$ & $0.579 (\pm0.01)$ & $0.040 (\pm0.03)$ \\
- &  & Adversarial Debiasing & $0.459 (\pm0.03)$ & $0.505 (\pm0.02)$ & $0.046 (\pm0.02)$ \\
- &  & Prejudice Remover & $0.454 (\pm0.03)$ & $0.487 (\pm0.02)$ & $0.033 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.419 (\pm0.04)$ & $0.522 (\pm0.02)$ & $0.102 (\pm0.03)$ \\
- &  & Gerry Fair Classifier & $0.358 (\pm0.04)$ & $0.428 (\pm0.02)$ & $0.070 (\pm0.03)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.492 (\pm0.02)$ & $0.512 (\pm0.01)$ & $0.020 (\pm0.01)$ \\
- &  & Prejudice Remover & $0.491 (\pm0.01)$ & $0.500 (\pm0.01)$ & $0.009 (\pm0.01)$ \\
- &  & Adversarial Debiasing & $0.478 (\pm0.01)$ & $0.501 (\pm0.02)$ & $0.024 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.395 (\pm0.01)$ & $0.581 (\pm0.01)$ & $0.185 (\pm0.01)$ \\
- &  & Gerry Fair Classifier & $0.357 (\pm0.02)$ & $0.512 (\pm0.02)$ & $0.154 (\pm0.03)$ \\
-\cline{1-6} \cline{2-6}
-\multirow[t]{20}{*}{Max(MCC - Eq. Opp.)} & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.040 (\pm0.41)$ & $0.301 (\pm0.13)$ & $0.261 (\pm0.30)$ \\
- &  & Gerry Fair Classifier & $-0.009 (\pm0.02)$ & $0.000 (\pm0.00)$ & $0.009 (\pm0.02)$ \\
- &  & Prejudice Remover & $-0.087 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.087 (\pm0.05)$ \\
- &  & Standard MLP (baseline) & $-0.097 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.097 (\pm0.05)$ \\
- &  & Fair Transition Loss & $-0.149 (\pm0.21)$ & $0.000 (\pm0.00)$ & $0.149 (\pm0.21)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.208 (\pm0.06)$ & $0.283 (\pm0.02)$ & $0.074 (\pm0.05)$ \\
- &  & Adversarial Debiasing & $0.191 (\pm0.11)$ & $0.324 (\pm0.03)$ & $0.133 (\pm0.10)$ \\
- &  & Gerry Fair Classifier & $0.155 (\pm0.05)$ & $0.274 (\pm0.06)$ & $0.120 (\pm0.04)$ \\
- &  & Prejudice Remover & $-0.352 (\pm0.03)$ & $-0.278 (\pm0.02)$ & $0.073 (\pm0.03)$ \\
- &  & Standard MLP (baseline) & $-0.471 (\pm0.05)$ & $-0.294 (\pm0.02)$ & $0.176 (\pm0.04)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.485 (\pm0.06)$ & $0.569 (\pm0.01)$ & $0.084 (\pm0.06)$ \\
- &  & Standard MLP (baseline) & $0.439 (\pm0.03)$ & $0.514 (\pm0.02)$ & $0.075 (\pm0.03)$ \\
- &  & Adversarial Debiasing & $0.426 (\pm0.06)$ & $0.512 (\pm0.02)$ & $0.086 (\pm0.05)$ \\
- &  & Prejudice Remover & $0.413 (\pm0.04)$ & $0.485 (\pm0.02)$ & $0.072 (\pm0.04)$ \\
- &  & Gerry Fair Classifier & $0.371 (\pm0.04)$ & $0.423 (\pm0.02)$ & $0.052 (\pm0.03)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.523 (\pm0.02)$ & $0.576 (\pm0.02)$ & $0.052 (\pm0.02)$ \\
- &  & Prejudice Remover & $0.509 (\pm0.05)$ & $0.558 (\pm0.02)$ & $0.049 (\pm0.03)$ \\
- &  & Adversarial Debiasing & $0.509 (\pm0.03)$ & $0.565 (\pm0.02)$ & $0.056 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.489 (\pm0.03)$ & $0.576 (\pm0.01)$ & $0.087 (\pm0.03)$ \\
- &  & Gerry Fair Classifier & $0.434 (\pm0.01)$ & $0.523 (\pm0.01)$ & $0.089 (\pm0.01)$ \\
-\cline{1-6} \cline{2-6}
-\multirow[t]{20}{*}{Max(MCC - Eq. Odds)} & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.116 (\pm0.40)$ & $0.311 (\pm0.14)$ & $0.195 (\pm0.28)$ \\
- &  & Gerry Fair Classifier & $-0.003 (\pm0.01)$ & $0.000 (\pm0.00)$ & $0.003 (\pm0.01)$ \\
- &  & Prejudice Remover & $-0.073 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.073 (\pm0.06)$ \\
- &  & Standard MLP (baseline) & $-0.092 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.092 (\pm0.06)$ \\
- &  & Fair Transition Loss & $-0.113 (\pm0.26)$ & $0.000 (\pm0.00)$ & $0.113 (\pm0.26)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Adversarial Debiasing & $0.258 (\pm0.05)$ & $0.329 (\pm0.03)$ & $0.070 (\pm0.05)$ \\
- &  & Fair Transition Loss & $0.213 (\pm0.06)$ & $0.264 (\pm0.06)$ & $0.050 (\pm0.03)$ \\
- &  & Gerry Fair Classifier & $0.201 (\pm0.05)$ & $0.290 (\pm0.04)$ & $0.089 (\pm0.05)$ \\
- &  & Prejudice Remover & $-0.319 (\pm0.03)$ & $-0.289 (\pm0.03)$ & $0.030 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $-0.435 (\pm0.03)$ & $-0.292 (\pm0.02)$ & $0.143 (\pm0.03)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.467 (\pm0.11)$ & $0.560 (\pm0.03)$ & $0.093 (\pm0.10)$ \\
- &  & Standard MLP (baseline) & $0.432 (\pm0.06)$ & $0.520 (\pm0.02)$ & $0.087 (\pm0.06)$ \\
- &  & Prejudice Remover & $0.392 (\pm0.09)$ & $0.490 (\pm0.02)$ & $0.098 (\pm0.08)$ \\
- &  & Adversarial Debiasing & $0.373 (\pm0.09)$ & $0.508 (\pm0.02)$ & $0.136 (\pm0.09)$ \\
- &  & Gerry Fair Classifier & $0.344 (\pm0.07)$ & $0.422 (\pm0.02)$ & $0.078 (\pm0.06)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.556 (\pm0.03)$ & $0.584 (\pm0.01)$ & $0.029 (\pm0.03)$ \\
- &  & Prejudice Remover & $0.505 (\pm0.09)$ & $0.560 (\pm0.02)$ & $0.055 (\pm0.08)$ \\
- &  & Adversarial Debiasing & $0.493 (\pm0.05)$ & $0.573 (\pm0.01)$ & $0.080 (\pm0.05)$ \\
- &  & Standard MLP (baseline) & $0.489 (\pm0.03)$ & $0.580 (\pm0.01)$ & $0.091 (\pm0.03)$ \\
- &  & Gerry Fair Classifier & $0.394 (\pm0.03)$ & $0.515 (\pm0.02)$ & $0.121 (\pm0.02)$ \\
-\cline{1-6} \cline{2-6}
-\multirow[t]{20}{*}{Max(Acc - Stat. Parity)} & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.577 (\pm0.26)$ & $0.674 (\pm0.06)$ & $0.096 (\pm0.22)$ \\
- &  & Standard MLP (baseline) & $0.512 (\pm0.06)$ & $0.621 (\pm0.04)$ & $0.109 (\pm0.05)$ \\
- &  & Prejudice Remover & $0.491 (\pm0.06)$ & $0.587 (\pm0.03)$ & $0.096 (\pm0.05)$ \\
- &  & Gerry Fair Classifier & $0.448 (\pm0.24)$ & $0.523 (\pm0.23)$ & $0.075 (\pm0.07)$ \\
- &  & Adversarial Debiasing & $0.430 (\pm0.33)$ & $0.713 (\pm0.09)$ & $0.283 (\pm0.26)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Adversarial Debiasing & $0.538 (\pm0.07)$ & $0.670 (\pm0.02)$ & $0.132 (\pm0.08)$ \\
- &  & Fair Transition Loss & $0.501 (\pm0.15)$ & $0.600 (\pm0.05)$ & $0.099 (\pm0.14)$ \\
- &  & Gerry Fair Classifier & $0.501 (\pm0.05)$ & $0.614 (\pm0.05)$ & $0.113 (\pm0.07)$ \\
- &  & Prejudice Remover & $0.308 (\pm0.03)$ & $0.359 (\pm0.01)$ & $0.052 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.146 (\pm0.03)$ & $0.354 (\pm0.02)$ & $0.208 (\pm0.02)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Bank Marketing} & Adversarial Debiasing & $0.869 (\pm0.03)$ & $0.901 (\pm0.00)$ & $0.031 (\pm0.02)$ \\
- &  & Prejudice Remover & $0.860 (\pm0.02)$ & $0.898 (\pm0.00)$ & $0.038 (\pm0.02)$ \\
- &  & Fair Transition Loss & $0.854 (\pm0.05)$ & $0.889 (\pm0.01)$ & $0.035 (\pm0.05)$ \\
- &  & Gerry Fair Classifier & $0.824 (\pm0.02)$ & $0.895 (\pm0.00)$ & $0.071 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.799 (\pm0.04)$ & $0.902 (\pm0.00)$ & $0.103 (\pm0.03)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.814 (\pm0.01)$ & $0.828 (\pm0.01)$ & $0.014 (\pm0.01)$ \\
- &  & Adversarial Debiasing & $0.808 (\pm0.01)$ & $0.830 (\pm0.01)$ & $0.022 (\pm0.01)$ \\
- &  & Prejudice Remover & $0.807 (\pm0.01)$ & $0.825 (\pm0.00)$ & $0.018 (\pm0.01)$ \\
- &  & Standard MLP (baseline) & $0.666 (\pm0.01)$ & $0.851 (\pm0.00)$ & $0.184 (\pm0.01)$ \\
- &  & Gerry Fair Classifier & $0.651 (\pm0.21)$ & $0.721 (\pm0.07)$ & $0.070 (\pm0.14)$ \\
-\cline{1-6} \cline{2-6}
-\multirow[t]{20}{*}{Max(Acc - Eq. Opp.)} & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.572 (\pm0.31)$ & $0.669 (\pm0.09)$ & $0.097 (\pm0.23)$ \\
- &  & Standard MLP (baseline) & $0.525 (\pm0.06)$ & $0.627 (\pm0.03)$ & $0.102 (\pm0.05)$ \\
- &  & Prejudice Remover & $0.484 (\pm0.05)$ & $0.591 (\pm0.04)$ & $0.107 (\pm0.06)$ \\
- &  & Gerry Fair Classifier & $0.431 (\pm0.23)$ & $0.500 (\pm0.25)$ & $0.069 (\pm0.07)$ \\
- &  & Adversarial Debiasing & $0.368 (\pm0.38)$ & $0.685 (\pm0.10)$ & $0.317 (\pm0.30)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.572 (\pm0.03)$ & $0.631 (\pm0.04)$ & $0.059 (\pm0.03)$ \\
- &  & Adversarial Debiasing & $0.553 (\pm0.09)$ & $0.669 (\pm0.01)$ & $0.116 (\pm0.09)$ \\
- &  & Gerry Fair Classifier & $0.530 (\pm0.03)$ & $0.637 (\pm0.04)$ & $0.107 (\pm0.05)$ \\
- &  & Prejudice Remover & $0.264 (\pm0.03)$ & $0.357 (\pm0.01)$ & $0.093 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.155 (\pm0.04)$ & $0.350 (\pm0.02)$ & $0.195 (\pm0.04)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Bank Marketing} & Gerry Fair Classifier & $0.837 (\pm0.04)$ & $0.895 (\pm0.00)$ & $0.058 (\pm0.04)$ \\
- &  & Fair Transition Loss & $0.833 (\pm0.05)$ & $0.892 (\pm0.01)$ & $0.059 (\pm0.05)$ \\
- &  & Prejudice Remover & $0.827 (\pm0.04)$ & $0.898 (\pm0.00)$ & $0.071 (\pm0.04)$ \\
- &  & Standard MLP (baseline) & $0.826 (\pm0.04)$ & $0.901 (\pm0.00)$ & $0.075 (\pm0.04)$ \\
- &  & Adversarial Debiasing & $0.807 (\pm0.07)$ & $0.902 (\pm0.00)$ & $0.095 (\pm0.07)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.808 (\pm0.02)$ & $0.842 (\pm0.01)$ & $0.034 (\pm0.02)$ \\
- &  & Adversarial Debiasing & $0.796 (\pm0.01)$ & $0.849 (\pm0.00)$ & $0.052 (\pm0.01)$ \\
- &  & Prejudice Remover & $0.794 (\pm0.02)$ & $0.845 (\pm0.01)$ & $0.051 (\pm0.01)$ \\
- &  & Standard MLP (baseline) & $0.765 (\pm0.02)$ & $0.850 (\pm0.00)$ & $0.084 (\pm0.02)$ \\
- &  & Gerry Fair Classifier & $0.756 (\pm0.01)$ & $0.788 (\pm0.03)$ & $0.032 (\pm0.04)$ \\
-\cline{1-6} \cline{2-6}
-\multirow[t]{20}{*}{Max(Acc - Eq. Odds)} & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.680 (\pm0.05)$ & $0.692 (\pm0.03)$ & $0.013 (\pm0.02)$ \\
- &  & Standard MLP (baseline) & $0.550 (\pm0.06)$ & $0.614 (\pm0.03)$ & $0.065 (\pm0.05)$ \\
- &  & Adversarial Debiasing & $0.530 (\pm0.33)$ & $0.713 (\pm0.10)$ & $0.183 (\pm0.24)$ \\
- &  & Prejudice Remover & $0.505 (\pm0.08)$ & $0.590 (\pm0.03)$ & $0.085 (\pm0.07)$ \\
- &  & Gerry Fair Classifier & $0.351 (\pm0.26)$ & $0.433 (\pm0.28)$ & $0.082 (\pm0.08)$ \\
-\cline{2-6}
- & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.594 (\pm0.04)$ & $0.648 (\pm0.01)$ & $0.054 (\pm0.03)$ \\
- &  & Adversarial Debiasing & $0.594 (\pm0.07)$ & $0.672 (\pm0.02)$ & $0.078 (\pm0.06)$ \\
- &  & Gerry Fair Classifier & $0.558 (\pm0.05)$ & $0.647 (\pm0.02)$ & $0.088 (\pm0.04)$ \\
- &  & Prejudice Remover & $0.287 (\pm0.03)$ & $0.342 (\pm0.01)$ & $0.055 (\pm0.03)$ \\
- &  & Standard MLP (baseline) & $0.218 (\pm0.05)$ & $0.353 (\pm0.01)$ & $0.135 (\pm0.05)$ \\
+\multirow[t]{20}{*}{Max(Acc - Eq. Odds)} & \multirow[t]{5}{*}{Adult Income} & Prejudice Remover & $0.810 (\pm0.02)$ & $0.846 (\pm0.00)$ & $0.036 (\pm0.02)$ \\
+ &  & Fair Transition Loss & $0.787 (\pm0.08)$ & $0.826 (\pm0.07)$ & $0.039 (\pm0.04)$ \\
+ &  & Adversarial Debiasing & $0.756 (\pm0.03)$ & $0.848 (\pm0.00)$ & $0.092 (\pm0.03)$ \\
+ &  & Standard MLP (baseline) & $0.752 (\pm0.04)$ & $0.849 (\pm0.00)$ & $0.097 (\pm0.04)$ \\
+ &  & Gerry Fair Classifier & $0.705 (\pm0.07)$ & $0.751 (\pm0.09)$ & $0.046 (\pm0.05)$ \\
 \cline{2-6}
  & \multirow[t]{5}{*}{Bank Marketing} & Gerry Fair Classifier & $0.837 (\pm0.06)$ & $0.893 (\pm0.00)$ & $0.057 (\pm0.06)$ \\
  &  & Standard MLP (baseline) & $0.800 (\pm0.06)$ & $0.902 (\pm0.00)$ & $0.102 (\pm0.06)$ \\
@@ -142,11 +16,137 @@ Fitness Rule Abvr & dataset & method &  &  &  \\
  &  & Prejudice Remover & $0.781 (\pm0.07)$ & $0.899 (\pm0.00)$ & $0.118 (\pm0.07)$ \\
  &  & Adversarial Debiasing & $0.750 (\pm0.09)$ & $0.900 (\pm0.00)$ & $0.150 (\pm0.09)$ \\
 \cline{2-6}
- & \multirow[t]{5}{*}{Adult Income} & Prejudice Remover & $0.810 (\pm0.02)$ & $0.846 (\pm0.00)$ & $0.036 (\pm0.02)$ \\
- &  & Fair Transition Loss & $0.787 (\pm0.08)$ & $0.826 (\pm0.07)$ & $0.039 (\pm0.04)$ \\
- &  & Adversarial Debiasing & $0.756 (\pm0.03)$ & $0.848 (\pm0.00)$ & $0.092 (\pm0.03)$ \\
- &  & Standard MLP (baseline) & $0.752 (\pm0.04)$ & $0.849 (\pm0.00)$ & $0.097 (\pm0.04)$ \\
- &  & Gerry Fair Classifier & $0.705 (\pm0.07)$ & $0.751 (\pm0.09)$ & $0.046 (\pm0.05)$ \\
+ & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.594 (\pm0.04)$ & $0.648 (\pm0.01)$ & $0.054 (\pm0.03)$ \\
+ &  & Adversarial Debiasing & $0.594 (\pm0.07)$ & $0.672 (\pm0.02)$ & $0.078 (\pm0.06)$ \\
+ &  & Gerry Fair Classifier & $0.558 (\pm0.05)$ & $0.647 (\pm0.02)$ & $0.088 (\pm0.04)$ \\
+ &  & Prejudice Remover & $0.287 (\pm0.03)$ & $0.342 (\pm0.01)$ & $0.055 (\pm0.03)$ \\
+ &  & Standard MLP (baseline) & $0.218 (\pm0.05)$ & $0.353 (\pm0.01)$ & $0.135 (\pm0.05)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.680 (\pm0.05)$ & $0.692 (\pm0.03)$ & $0.013 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.550 (\pm0.06)$ & $0.614 (\pm0.03)$ & $0.065 (\pm0.05)$ \\
+ &  & Adversarial Debiasing & $0.530 (\pm0.33)$ & $0.713 (\pm0.10)$ & $0.183 (\pm0.24)$ \\
+ &  & Prejudice Remover & $0.505 (\pm0.08)$ & $0.590 (\pm0.03)$ & $0.085 (\pm0.07)$ \\
+ &  & Gerry Fair Classifier & $0.351 (\pm0.26)$ & $0.433 (\pm0.28)$ & $0.082 (\pm0.08)$ \\
+\cline{1-6} \cline{2-6}
+\multirow[t]{20}{*}{Max(Acc - Eq. Opp.)} & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.808 (\pm0.02)$ & $0.842 (\pm0.01)$ & $0.034 (\pm0.02)$ \\
+ &  & Adversarial Debiasing & $0.796 (\pm0.01)$ & $0.849 (\pm0.00)$ & $0.052 (\pm0.01)$ \\
+ &  & Prejudice Remover & $0.794 (\pm0.02)$ & $0.845 (\pm0.01)$ & $0.051 (\pm0.01)$ \\
+ &  & Standard MLP (baseline) & $0.765 (\pm0.02)$ & $0.850 (\pm0.00)$ & $0.084 (\pm0.02)$ \\
+ &  & Gerry Fair Classifier & $0.756 (\pm0.01)$ & $0.788 (\pm0.03)$ & $0.032 (\pm0.04)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Bank Marketing} & Gerry Fair Classifier & $0.837 (\pm0.04)$ & $0.895 (\pm0.00)$ & $0.058 (\pm0.04)$ \\
+ &  & Fair Transition Loss & $0.833 (\pm0.05)$ & $0.892 (\pm0.01)$ & $0.059 (\pm0.05)$ \\
+ &  & Prejudice Remover & $0.827 (\pm0.04)$ & $0.898 (\pm0.00)$ & $0.071 (\pm0.04)$ \\
+ &  & Standard MLP (baseline) & $0.826 (\pm0.04)$ & $0.901 (\pm0.00)$ & $0.075 (\pm0.04)$ \\
+ &  & Adversarial Debiasing & $0.807 (\pm0.07)$ & $0.902 (\pm0.00)$ & $0.095 (\pm0.07)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.572 (\pm0.03)$ & $0.631 (\pm0.04)$ & $0.059 (\pm0.03)$ \\
+ &  & Adversarial Debiasing & $0.553 (\pm0.09)$ & $0.669 (\pm0.01)$ & $0.116 (\pm0.09)$ \\
+ &  & Gerry Fair Classifier & $0.530 (\pm0.03)$ & $0.637 (\pm0.04)$ & $0.107 (\pm0.05)$ \\
+ &  & Prejudice Remover & $0.264 (\pm0.03)$ & $0.357 (\pm0.01)$ & $0.093 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.155 (\pm0.04)$ & $0.350 (\pm0.02)$ & $0.195 (\pm0.04)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.572 (\pm0.31)$ & $0.669 (\pm0.09)$ & $0.097 (\pm0.23)$ \\
+ &  & Standard MLP (baseline) & $0.525 (\pm0.06)$ & $0.627 (\pm0.03)$ & $0.102 (\pm0.05)$ \\
+ &  & Prejudice Remover & $0.484 (\pm0.05)$ & $0.591 (\pm0.04)$ & $0.107 (\pm0.06)$ \\
+ &  & Gerry Fair Classifier & $0.431 (\pm0.23)$ & $0.500 (\pm0.25)$ & $0.069 (\pm0.07)$ \\
+ &  & Adversarial Debiasing & $0.368 (\pm0.38)$ & $0.685 (\pm0.10)$ & $0.317 (\pm0.30)$ \\
+\cline{1-6} \cline{2-6}
+\multirow[t]{20}{*}{Max(Acc - Stat. Parity)} & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.814 (\pm0.01)$ & $0.828 (\pm0.01)$ & $0.014 (\pm0.01)$ \\
+ &  & Adversarial Debiasing & $0.808 (\pm0.01)$ & $0.830 (\pm0.01)$ & $0.022 (\pm0.01)$ \\
+ &  & Prejudice Remover & $0.807 (\pm0.01)$ & $0.825 (\pm0.00)$ & $0.018 (\pm0.01)$ \\
+ &  & Standard MLP (baseline) & $0.666 (\pm0.01)$ & $0.851 (\pm0.00)$ & $0.184 (\pm0.01)$ \\
+ &  & Gerry Fair Classifier & $0.651 (\pm0.21)$ & $0.721 (\pm0.07)$ & $0.070 (\pm0.14)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Bank Marketing} & Adversarial Debiasing & $0.869 (\pm0.03)$ & $0.901 (\pm0.00)$ & $0.031 (\pm0.02)$ \\
+ &  & Prejudice Remover & $0.860 (\pm0.02)$ & $0.898 (\pm0.00)$ & $0.038 (\pm0.02)$ \\
+ &  & Fair Transition Loss & $0.854 (\pm0.05)$ & $0.889 (\pm0.01)$ & $0.035 (\pm0.05)$ \\
+ &  & Gerry Fair Classifier & $0.824 (\pm0.02)$ & $0.895 (\pm0.00)$ & $0.071 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.799 (\pm0.04)$ & $0.902 (\pm0.00)$ & $0.103 (\pm0.03)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Compas Recidivism} & Adversarial Debiasing & $0.538 (\pm0.07)$ & $0.670 (\pm0.02)$ & $0.132 (\pm0.08)$ \\
+ &  & Fair Transition Loss & $0.501 (\pm0.15)$ & $0.600 (\pm0.05)$ & $0.099 (\pm0.14)$ \\
+ &  & Gerry Fair Classifier & $0.501 (\pm0.05)$ & $0.614 (\pm0.05)$ & $0.113 (\pm0.07)$ \\
+ &  & Prejudice Remover & $0.308 (\pm0.03)$ & $0.359 (\pm0.01)$ & $0.052 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.146 (\pm0.03)$ & $0.354 (\pm0.02)$ & $0.208 (\pm0.02)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Fair Transition Loss & $0.577 (\pm0.26)$ & $0.674 (\pm0.06)$ & $0.096 (\pm0.22)$ \\
+ &  & Standard MLP (baseline) & $0.512 (\pm0.06)$ & $0.621 (\pm0.04)$ & $0.109 (\pm0.05)$ \\
+ &  & Prejudice Remover & $0.491 (\pm0.06)$ & $0.587 (\pm0.03)$ & $0.096 (\pm0.05)$ \\
+ &  & Gerry Fair Classifier & $0.448 (\pm0.24)$ & $0.523 (\pm0.23)$ & $0.075 (\pm0.07)$ \\
+ &  & Adversarial Debiasing & $0.430 (\pm0.33)$ & $0.713 (\pm0.09)$ & $0.283 (\pm0.26)$ \\
+\cline{1-6} \cline{2-6}
+\multirow[t]{20}{*}{Max(MCC - Eq. Odds)} & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.556 (\pm0.03)$ & $0.584 (\pm0.01)$ & $0.029 (\pm0.03)$ \\
+ &  & Prejudice Remover & $0.505 (\pm0.09)$ & $0.560 (\pm0.02)$ & $0.055 (\pm0.08)$ \\
+ &  & Adversarial Debiasing & $0.493 (\pm0.05)$ & $0.573 (\pm0.01)$ & $0.080 (\pm0.05)$ \\
+ &  & Standard MLP (baseline) & $0.489 (\pm0.03)$ & $0.580 (\pm0.01)$ & $0.091 (\pm0.03)$ \\
+ &  & Gerry Fair Classifier & $0.394 (\pm0.03)$ & $0.515 (\pm0.02)$ & $0.121 (\pm0.02)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.467 (\pm0.11)$ & $0.560 (\pm0.03)$ & $0.093 (\pm0.10)$ \\
+ &  & Standard MLP (baseline) & $0.432 (\pm0.06)$ & $0.520 (\pm0.02)$ & $0.087 (\pm0.06)$ \\
+ &  & Prejudice Remover & $0.392 (\pm0.09)$ & $0.490 (\pm0.02)$ & $0.098 (\pm0.08)$ \\
+ &  & Adversarial Debiasing & $0.373 (\pm0.09)$ & $0.508 (\pm0.02)$ & $0.136 (\pm0.09)$ \\
+ &  & Gerry Fair Classifier & $0.344 (\pm0.07)$ & $0.422 (\pm0.02)$ & $0.078 (\pm0.06)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Compas Recidivism} & Adversarial Debiasing & $0.258 (\pm0.05)$ & $0.329 (\pm0.03)$ & $0.070 (\pm0.05)$ \\
+ &  & Fair Transition Loss & $0.213 (\pm0.06)$ & $0.264 (\pm0.06)$ & $0.050 (\pm0.03)$ \\
+ &  & Gerry Fair Classifier & $0.201 (\pm0.05)$ & $0.290 (\pm0.04)$ & $0.089 (\pm0.05)$ \\
+ &  & Prejudice Remover & $-0.319 (\pm0.03)$ & $-0.289 (\pm0.03)$ & $0.030 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $-0.435 (\pm0.03)$ & $-0.292 (\pm0.02)$ & $0.143 (\pm0.03)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.116 (\pm0.40)$ & $0.311 (\pm0.14)$ & $0.195 (\pm0.28)$ \\
+ &  & Gerry Fair Classifier & $-0.003 (\pm0.01)$ & $0.000 (\pm0.00)$ & $0.003 (\pm0.01)$ \\
+ &  & Prejudice Remover & $-0.073 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.073 (\pm0.06)$ \\
+ &  & Standard MLP (baseline) & $-0.092 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.092 (\pm0.06)$ \\
+ &  & Fair Transition Loss & $-0.113 (\pm0.26)$ & $0.000 (\pm0.00)$ & $0.113 (\pm0.26)$ \\
+\cline{1-6} \cline{2-6}
+\multirow[t]{20}{*}{Max(MCC - Eq. Opp.)} & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.523 (\pm0.02)$ & $0.576 (\pm0.02)$ & $0.052 (\pm0.02)$ \\
+ &  & Prejudice Remover & $0.509 (\pm0.05)$ & $0.558 (\pm0.02)$ & $0.049 (\pm0.03)$ \\
+ &  & Adversarial Debiasing & $0.509 (\pm0.03)$ & $0.565 (\pm0.02)$ & $0.056 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.489 (\pm0.03)$ & $0.576 (\pm0.01)$ & $0.087 (\pm0.03)$ \\
+ &  & Gerry Fair Classifier & $0.434 (\pm0.01)$ & $0.523 (\pm0.01)$ & $0.089 (\pm0.01)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.485 (\pm0.06)$ & $0.569 (\pm0.01)$ & $0.084 (\pm0.06)$ \\
+ &  & Standard MLP (baseline) & $0.439 (\pm0.03)$ & $0.514 (\pm0.02)$ & $0.075 (\pm0.03)$ \\
+ &  & Adversarial Debiasing & $0.426 (\pm0.06)$ & $0.512 (\pm0.02)$ & $0.086 (\pm0.05)$ \\
+ &  & Prejudice Remover & $0.413 (\pm0.04)$ & $0.485 (\pm0.02)$ & $0.072 (\pm0.04)$ \\
+ &  & Gerry Fair Classifier & $0.371 (\pm0.04)$ & $0.423 (\pm0.02)$ & $0.052 (\pm0.03)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.208 (\pm0.06)$ & $0.283 (\pm0.02)$ & $0.074 (\pm0.05)$ \\
+ &  & Adversarial Debiasing & $0.191 (\pm0.11)$ & $0.324 (\pm0.03)$ & $0.133 (\pm0.10)$ \\
+ &  & Gerry Fair Classifier & $0.155 (\pm0.05)$ & $0.274 (\pm0.06)$ & $0.120 (\pm0.04)$ \\
+ &  & Prejudice Remover & $-0.352 (\pm0.03)$ & $-0.278 (\pm0.02)$ & $0.073 (\pm0.03)$ \\
+ &  & Standard MLP (baseline) & $-0.471 (\pm0.05)$ & $-0.294 (\pm0.02)$ & $0.176 (\pm0.04)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.040 (\pm0.41)$ & $0.301 (\pm0.13)$ & $0.261 (\pm0.30)$ \\
+ &  & Gerry Fair Classifier & $-0.009 (\pm0.02)$ & $0.000 (\pm0.00)$ & $0.009 (\pm0.02)$ \\
+ &  & Prejudice Remover & $-0.087 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.087 (\pm0.05)$ \\
+ &  & Standard MLP (baseline) & $-0.097 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.097 (\pm0.05)$ \\
+ &  & Fair Transition Loss & $-0.149 (\pm0.21)$ & $0.000 (\pm0.00)$ & $0.149 (\pm0.21)$ \\
+\cline{1-6} \cline{2-6}
+\multirow[t]{20}{*}{Max(MCC - Stat. Parity)} & \multirow[t]{5}{*}{Adult Income} & Fair Transition Loss & $0.492 (\pm0.02)$ & $0.512 (\pm0.01)$ & $0.020 (\pm0.01)$ \\
+ &  & Prejudice Remover & $0.491 (\pm0.01)$ & $0.500 (\pm0.01)$ & $0.009 (\pm0.01)$ \\
+ &  & Adversarial Debiasing & $0.478 (\pm0.01)$ & $0.501 (\pm0.02)$ & $0.024 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.395 (\pm0.01)$ & $0.581 (\pm0.01)$ & $0.185 (\pm0.01)$ \\
+ &  & Gerry Fair Classifier & $0.357 (\pm0.02)$ & $0.512 (\pm0.02)$ & $0.154 (\pm0.03)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Bank Marketing} & Fair Transition Loss & $0.539 (\pm0.03)$ & $0.579 (\pm0.01)$ & $0.040 (\pm0.03)$ \\
+ &  & Adversarial Debiasing & $0.459 (\pm0.03)$ & $0.505 (\pm0.02)$ & $0.046 (\pm0.02)$ \\
+ &  & Prejudice Remover & $0.454 (\pm0.03)$ & $0.487 (\pm0.02)$ & $0.033 (\pm0.02)$ \\
+ &  & Standard MLP (baseline) & $0.419 (\pm0.04)$ & $0.522 (\pm0.02)$ & $0.102 (\pm0.03)$ \\
+ &  & Gerry Fair Classifier & $0.358 (\pm0.04)$ & $0.428 (\pm0.02)$ & $0.070 (\pm0.03)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{Compas Recidivism} & Fair Transition Loss & $0.220 (\pm0.06)$ & $0.276 (\pm0.03)$ & $0.057 (\pm0.05)$ \\
+ &  & Adversarial Debiasing & $0.157 (\pm0.14)$ & $0.322 (\pm0.02)$ & $0.165 (\pm0.14)$ \\
+ &  & Gerry Fair Classifier & $0.141 (\pm0.04)$ & $0.289 (\pm0.06)$ & $0.148 (\pm0.06)$ \\
+ &  & Prejudice Remover & $-0.318 (\pm0.05)$ & $-0.276 (\pm0.03)$ & $0.042 (\pm0.03)$ \\
+ &  & Standard MLP (baseline) & $-0.511 (\pm0.05)$ & $-0.299 (\pm0.03)$ & $0.212 (\pm0.04)$ \\
+\cline{2-6}
+ & \multirow[t]{5}{*}{German Credit} & Adversarial Debiasing & $0.200 (\pm0.17)$ & $0.368 (\pm0.06)$ & $0.168 (\pm0.15)$ \\
+ &  & Gerry Fair Classifier & $-0.031 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.031 (\pm0.05)$ \\
+ &  & Fair Transition Loss & $-0.034 (\pm0.07)$ & $0.000 (\pm0.00)$ & $0.034 (\pm0.07)$ \\
+ &  & Prejudice Remover & $-0.083 (\pm0.05)$ & $0.000 (\pm0.00)$ & $0.083 (\pm0.05)$ \\
+ &  & Standard MLP (baseline) & $-0.090 (\pm0.06)$ & $0.000 (\pm0.00)$ & $0.090 (\pm0.06)$ \\
 \cline{1-6} \cline{2-6}
 \bottomrule
 \end{tabular}
