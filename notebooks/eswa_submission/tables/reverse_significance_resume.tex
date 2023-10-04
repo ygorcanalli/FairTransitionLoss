@@ -1,0 +1,37 @@
+\begin{tabular}{llllll}
+\toprule
+ &  & Standard MLP (baseline) (reverse) & Adversarial Debiasing (reverse) & Prejudice Remover (reverse) & Gerry Fair Classifier (reverse) \\
+fitness_rule & dataset &  &  &  &  \\
+\midrule
+\multirow[t]{4}{*}{acc_odds} & Adult Income & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Bank Marketing & 1.00 & 1.00 & 1.00 & 0.80 \\
+ & Compas Recidivism & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & German Credit & 0.73 & 1.00 & 0.84 & 1.00 \\
+\cline{1-6}
+\multirow[t]{4}{*}{acc_opportunity} & Adult Income & 1.00 & 1.00 & \textit{0.47} & 1.00 \\
+ & Bank Marketing & 0.76 & 1.00 & 1.00 & \textit{0.39} \\
+ & Compas Recidivism & 0.99 & 1.00 & 1.00 & 1.00 \\
+ & German Credit & 1.00 & 1.00 & 1.00 & 1.00 \\
+\cline{1-6}
+\multirow[t]{4}{*}{acc_parity} & Adult Income & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Bank Marketing & 1.00 & 0.55 & 0.73 & 1.00 \\
+ & Compas Recidivism & 1.00 & \textit{0.50} & 1.00 & 0.72 \\
+ & German Credit & 0.95 & 1.00 & 1.00 & 1.00 \\
+\cline{1-6}
+\multirow[t]{4}{*}{mcc_odds} & Adult Income & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Bank Marketing & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Compas Recidivism & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & German Credit & \textit{0.35} & 0.51 & \textit{0.31} & \textit{0.07} \\
+\cline{1-6}
+\multirow[t]{4}{*}{mcc_opportunity} & Adult Income & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Bank Marketing & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Compas Recidivism & 1.00 & \textit{0.16} & 1.00 & 1.00 \\
+ & German Credit & 0.58 & \textit{0.43} & 0.56 & \textit{0.21} \\
+\cline{1-6}
+\multirow[t]{4}{*}{mcc_parity} & Adult Income & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Bank Marketing & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & Compas Recidivism & 1.00 & 1.00 & 1.00 & 1.00 \\
+ & German Credit & 1.00 & \textit{0.06} & 1.00 & 0.83 \\
+\cline{1-6}
+\bottomrule
+\end{tabular}
