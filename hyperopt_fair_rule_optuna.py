@@ -38,13 +38,29 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
         # sklearn classifier
         y_pred_prob = model.predict_proba(dataset.features)
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
-        y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
+        y_pred = (y_pred_prob[:, 1] > 0.5).astype(np.float64)
+
+        # Map the dataset labels to back to their original values.
+        y_pred[y_pred == 0] = dataset.unfavorable_label
+        y_pred[y_pred == 1] = dataset.favorable_label
+
+        dataset_pred = dataset.copy()
+        dataset_pred.labels = y_pred
+
     except AttributeError:
         # aif360 inprocessing algorithm
         y_pred = model.predict(dataset).labels
 
-    dataset_pred = dataset.copy()
-    dataset_pred.labels = y_pred
+        dataset_pred = dataset.copy()
+        dataset_pred.labels = y_pred
+
+        # Map the dataset labels to back to their original values.
+        temp_labels = dataset_pred.labels.copy()
+
+        temp_labels[(dataset_pred.labels == 1.0).ravel(), 0] = dataset.favorable_label
+        temp_labels[(dataset_pred.labels == 0.0).ravel(), 0] = dataset.unfavorable_label
+
+        dataset_pred.labels = temp_labels.copy()
     metric = ClassificationMetric(
             dataset, dataset_pred,
             unprivileged_groups=unprivileged_groups,
@@ -250,10 +266,10 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 datasets = [
-    adult_dataset_reader,
-    bank_dataset_reader,
-    compas_dataset_reader
-    #german_dataset_reader
+    #adult_dataset_reader,
+    #bank_dataset_reader,
+    #compas_dataset_reader
+    german_dataset_reader
 ]
 
 rules = [
@@ -267,11 +283,11 @@ rules = [
 
 methods = [
     #meta_fair_classifier_sr_initializer,
-    gerry_fair_classifier_initializer
-    #simple_mlp_initializer,
-    #ftl_mlp_initializer,
-    #adversarial_debiasing_initializer,
-    #prejudice_remover_initializer
+    gerry_fair_classifier_initializer,
+    simple_mlp_initializer,
+    ftl_mlp_initializer,
+    #adversarial_debiasing_initializer
+    prejudice_remover_initializer
 ]
 
 results = []

@@ -1,9 +1,15 @@
 from aif360.datasets import GermanDataset
-from aif360.algorithms.inprocessing import PrejudiceRemover, MetaFairClassifier
+from aif360.algorithms.inprocessing import PrejudiceRemover, MetaFairClassifier, AdversarialDebiasing
 from models import describe_metrics, SimpleMLP, FairTransitionLossMLP
 import fitness_rules
 from fitness_rules import *
 from aif360.metrics import ClassificationMetric
+
+from sklearn.preprocessing import StandardScaler
+
+import tensorflow.compat.v1 as tf_old
+
+tf_old.disable_eager_execution()
 from pprint import pprint
 
 
@@ -12,13 +18,30 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule):
         # sklearn classifier
         y_pred_prob = model.predict_proba(dataset.features)
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
-        y_pred = (y_pred_prob[:, pos_ind] > 0.5).astype(np.float64)
+        y_pred = (y_pred_prob[:, 1] > 0.5).astype(np.float64)
+
+        # Map the dataset labels to back to their original values.
+        y_pred[y_pred == 0] = dataset.unfavorable_label
+        y_pred[y_pred == 1] = dataset.favorable_label
+
+        dataset_pred = dataset.copy()
+        dataset_pred.labels = y_pred
+
     except AttributeError:
         # aif360 inprocessing algorithm
         y_pred = model.predict(dataset).labels
 
-    dataset_pred = dataset.copy()
-    dataset_pred.labels = y_pred
+        dataset_pred = dataset.copy()
+        dataset_pred.labels = y_pred
+
+        # Map the dataset labels to back to their original values.
+        temp_labels = dataset_pred.labels.copy()
+
+        temp_labels[(dataset_pred.labels == 1.0).ravel(), 0] = dataset.favorable_label
+        temp_labels[(dataset_pred.labels == 0.0).ravel(), 0] = dataset.unfavorable_label
+
+        dataset_pred.labels = temp_labels.copy()
+
     metric = ClassificationMetric(
         dataset, dataset_pred,
         unprivileged_groups=unprivileged_groups,
@@ -58,17 +81,21 @@ unprivileged_groups = [{sens_attr: v} for v in
 privileged_groups = [{sens_attr: v} for v in
                      dataset_train.privileged_protected_attributes[sens_ind]]
 
-#model = FairTransitionLossMLP(sensitive_attr=sens_attr, dropout=0.2,
-                 #num_epochs=30, batch_size=32, hidden_sizes=[100,100],
-                 #privileged_demotion=0, privileged_promotion=0,
-                 #protected_demotion=0, protected_promotion=0)
+model = FairTransitionLossMLP(sensitive_attr=sens_attr, dropout=0.2,
+                 num_epochs=30, batch_size=32, hidden_sizes=[100,100],
+                 privileged_demotion=0, privileged_promotion=0,
+                 protected_demotion=0, protected_promotion=0)
 #model = MetaFairClassifier(sensitive_attr=sens_attr, type='sr')
 #model = PrejudiceRemover(sensitive_attr=sens_attr)
-model = SimpleMLP(sensitive_attr=sens_attr)
+
+scaler = StandardScaler()
+dataset_expanded_train.features = scaler.fit_transform(dataset_expanded_train.features)
+dataset_test.features = scaler.transform(dataset_test.features)
+#model = AdversarialDebiasing(unprivileged_groups, privileged_groups, 'adv_debias', tf_old.Session())
 
 model = model.fit(dataset_train)
 
-val_metrics = eval(model, dataset_val, unprivileged_groups, privileged_groups, mcc_odds)
+#val_metrics = eval(model, dataset_val, unprivileged_groups, privileged_groups, mcc_odds)
 test_metrics = eval(model, dataset_test, unprivileged_groups, privileged_groups, mcc_odds)
-describe_metrics(val_metrics)
+#describe_metrics(val_metrics)
 describe_metrics(test_metrics)
