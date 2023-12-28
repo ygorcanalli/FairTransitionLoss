@@ -8,6 +8,10 @@ from tensorflow.keras.optimizers.legacy import Adam
 from aif360.algorithms import Transformer
 from tensorflow.keras import backend as K
 
+import logging
+import os
+from sklearn.linear_model import LogisticRegression
+
 
 #tentar otimizar com outras métricas de performance
 #estudar balanceamento dos dados
@@ -183,6 +187,103 @@ class FairTransitionLossMLP(Transformer):
     def predict(self, X):
         logits = self.predict_proba(X)
         return np.argmax(logits, axis=1)
+
+# wrapper to https://github.com/che2198/APW
+class APW_DP(Transformer):
+
+    def __init__(self, sensitive_attr='', epochs=200, eta=0, alpha=0):
+        self.sensitive_attr = sensitive_attr
+        self.epochs = epochs
+        self.eta = eta
+        self.alpha = alpha
+        self.input_shape = None
+        self.model = None
+        self.classes_ = None
+        self.history = None
+
+    def _compute_sample_weights(self, true_labels, predicted_probabilities, protected_attributes, multipliers, eta,
+                               decision_boundary=0.5):
+        num_samples = len(true_labels)
+        exponential_term = np.exp(-eta * abs(predicted_probabilities - decision_boundary))
+        weight_component = np.zeros(num_samples)
+
+        for attr in protected_attributes:
+            weight_component += exponential_term * np.sum(attr) / np.sum(exponential_term * attr) * attr
+
+        combined_weights = np.zeros(num_samples)
+        for i, multiplier in enumerate(multipliers):
+            combined_weights += multiplier * protected_attributes[i]
+
+        sample_weights = combined_weights * weight_component
+
+        return sample_weights
+
+    def _compute_group_weights(self, predictions, true_labels, protected_attributes, alpha):
+        group_weights = []
+
+        num_samples = len(true_labels)
+
+        for attr in protected_attributes:
+            protected_indices = np.where(attr > 0)
+
+            positive_protected_prediction = np.sum(predictions[protected_indices])
+            negative_protected_prediction = np.sum(1 - predictions[protected_indices])
+
+            # Calculate weights for positive and negative protected predictions
+            weight_positive = (len(protected_indices[0]) * np.sum(predictions) + alpha) / (
+                        num_samples * positive_protected_prediction)
+            weight_negative = (len(protected_indices[0]) * np.sum(1 - predictions) + alpha) / (
+                        num_samples * negative_protected_prediction)
+
+            group_weights.extend([weight_positive, weight_negative])
+
+        return group_weights
+
+    def fit(self, dataset):
+        if self.model is None:
+            self.input_shape = dataset.features.shape[1]
+            self.classes_ = np.array([dataset.unfavorable_label, dataset.favorable_label])
+
+        sensitive_index = dataset.protected_attribute_names.index(self.sensitive_attr)
+
+        features = dataset.features
+        labels = (dataset.labels == dataset.favorable_label).reshape(features.shape[0]).astype(int)
+
+        #labels[:, 0] = (dataset.labels == dataset.unfavorable_label).reshape(features.shape[0]).astype(int)
+        #labels[:, 1] = (dataset.labels == dataset.favorable_label).reshape(features.shape[0]).astype(int)
+
+        protected_attributes = (dataset.protected_attributes[:, sensitive_index] ==
+                                      dataset.unprivileged_protected_attributes[sensitive_index]).astype(int)
+
+        protected_attributes_list = [protected_attributes, 1 - protected_attributes]
+        label_combinations = [protected_attributes * labels, protected_attributes * (1 - labels), \
+                              (1 - protected_attributes) * labels,
+                              (1 - protected_attributes) * (1 - labels)]
+        fairness_multipliers = np.ones(len(label_combinations))
+        sample_weights = np.array([1] * features.shape[0])
+
+        for epoch in range(self.epochs):
+            # Train logistic regression model
+            self.model = LogisticRegression(max_iter=10000)
+            self.model = self.model.fit(features, labels, sample_weights)
+
+            predictions_train = self.model.predict(features)
+            prediction_probabilities = self.model.predict_proba(features)[:, 0].astype(np.float32)
+
+            # Compute weights and multipliers
+            sample_weights = self._compute_sample_weights(labels, prediction_probabilities, label_combinations,
+                                                    fairness_multipliers, self.eta)
+            group_fairness_weights = self._compute_group_weights(predictions_train, labels, protected_attributes_list,
+                                                           self.alpha)
+            fairness_multipliers *= np.array(group_fairness_weights)
+
+        return self
+
+    def predict_proba(self, X):
+        return self.model.predict_proba(X)
+
+    def predict(self, X):
+        return self.model.predict(X)
 
 def describe_metrics(metrics):
     print("Fitness: {:6.4f}".format(metrics['fitness']))

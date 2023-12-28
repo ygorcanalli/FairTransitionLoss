@@ -159,6 +159,27 @@ def callback_generation(ga_instance):
     print("Generation = {generation}".format(generation=ga_instance.generations_completed))
     print("Fitness    = {fitness}".format(fitness=1/ga_instance.best_solution()[1]))
 
+def mathew_correlation_coefficient(metrics_dict):
+    PPV = metrics_dict['PPV']
+    TPR = metrics_dict['TPR']
+    TNR = metrics_dict['TNR']
+    NPV = metrics_dict['NPV']
+
+    FDR = metrics_dict['FDR']
+    FNR = metrics_dict['FNR']
+    FPR = metrics_dict['FPR']
+    FOR = metrics_dict['FOR']
+
+    return np.sqrt(PPV*TPR*TNR*NPV) - np.sqrt(FDR*FNR*FPR*FOR)
+
+def f1_score(metrics_dict):
+    precision = metrics_dict['PPV']
+    recall = metrics_dict['TPR']
+
+    if (precision + recall) > 0:
+        return 2*(precision*recall)/(precision+recall)
+    return 0
+
 def get_ga_instance(fitness_function, num_genes=4, init_range_low=0.0, init_range_high=1.0):
     num_generations = 15  # Number of generations.
     num_parents_mating = 5  # Number of solutions to be selected as parents in the mating pool.

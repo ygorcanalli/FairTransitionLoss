@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 from aif360.metrics import ClassificationMetric
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
-from models import FairTransitionLossMLP, SimpleMLP, describe_metrics
+from models import FairTransitionLossMLP, SimpleMLP, describe_metrics, APW_DP
 from fitness_rules import *
 from dataset_readers import *
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -13,10 +13,11 @@ import gc
 import json
 import os
 import optuna
+from util import mathew_correlation_coefficient, f1_score
 from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
-N_TRIALS = 100
+N_TRIALS = 5
 N_JOBS = 5
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
@@ -75,8 +76,9 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
     metrics['stat_par_diff'] = abs(metric.statistical_parity_difference())
     metrics['eq_opp_diff'] = abs(metric.equal_opportunity_difference())
     metrics['theil_ind'] = abs(metric.theil_index())
-    metrics['f1_score'] = metric.f1_score()
     metrics.update(metric.performance_measures())
+    metrics['MCC'] = mathew_correlation_coefficient(metrics)
+    metrics['f1_score'] = f1_score(metrics)
     metrics['fitness'] = fitness_rule(metrics)
     if type(hyperparameters) is not dict:
         metrics['solution'] = hyperparameters.params
@@ -112,7 +114,6 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
 
         study = optuna.create_study(direction='maximize',
                                     study_name="{0}_{1}_{2}".format(fitness_rule.__name__,model_initializer.__name__,now) ,
-                                    storage=CONNECTION_STRING,
                                     pruner=get_pruner(),
                                     sampler=get_sampler())
 
@@ -252,6 +253,22 @@ def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 
+def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+    classifier_num_hidden_units = 100
+    if type(hyperparameters) is not dict:
+        adversary_loss_weight = hyperparameters.suggest_float('adversary_loss_weight', 0.0, 1.0)
+    else:
+        adversary_loss_weight = hyperparameters['adversary_loss_weight']
+    if hyperparameters is not None:
+        model = AdversarialDebiasing(unprivileged_groups, privileged_groups,
+                                     'adv_debias_' + str(datetime.now().timestamp()), tf_old.Session(),
+                                     classifier_num_hidden_units=classifier_num_hidden_units,
+                                     adversary_loss_weight=adversary_loss_weight)
+    else:
+        model = AdversarialDebiasing(unprivileged_groups, privileged_groups,
+                                     'adv_debias_' + str(datetime.now().timestamp()), tf_old.Session())
+    return model
+
 def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
     if type(hyperparameters) is not dict:
         C = hyperparameters.suggest_float('C', 0.0, 20.0)
@@ -265,29 +282,44 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
         model = GerryFairClassifier(fairness_def='FN')
     return model
 
+def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+    if type(hyperparameters) is not dict:
+        alpha = hyperparameters.suggest_float('alpha', 0.0, 10000.0)
+        eta = hyperparameters.suggest_float('eta', 0.5, 3.0)
+    else:
+        alpha = hyperparameters['alpha']
+        eta = hyperparameters['eta']
+    if hyperparameters is not None:
+        model = APW_DP(sensitive_attr=sens_attr, alpha=alpha, eta=eta)
+    else:
+        model = APW_DP(sensitive_attr=sens_attr)
+    return model
+
+
 datasets = [
-    #adult_dataset_reader,
+    adult_dataset_reader,
     #bank_dataset_reader,
     #compas_dataset_reader
-    german_dataset_reader
+    #german_dataset_reader
 ]
 
 rules = [
     mcc_parity,
-    mcc_odds,
-    mcc_opportunity,
+    #mcc_odds,
+    #mcc_opportunity,
     acc_parity,
-    acc_odds,
-    acc_opportunity
+    #acc_odds,
+    #acc_opportunity
 ]
 
 methods = [
+    adaptative_priority_reweighting_classifier_initializer
     #meta_fair_classifier_sr_initializer,
-    gerry_fair_classifier_initializer,
-    simple_mlp_initializer,
-    ftl_mlp_initializer,
+    #gerry_fair_classifier_initializer,
+    #simple_mlp_initializer,
+    #ftl_mlp_initializer,
     #adversarial_debiasing_initializer
-    prejudice_remover_initializer
+    #prejudice_remover_initializer
 ]
 
 results = []
