@@ -9,13 +9,3 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     ports:
       - "3306:3306"
-  #aif360:
-  #  build: ./aif360
-  #  ports:
-  #    - "8888:8888"
-  #    - "6006:6006"
-  #  #depends_on:
-  #  #  - db
-  #  environment:
-  #    - CONNECTION_STRING=mysql+mysqlconnector://optuna:optuna@db/optuna
-
