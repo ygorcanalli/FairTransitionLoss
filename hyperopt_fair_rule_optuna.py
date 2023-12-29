@@ -2,7 +2,8 @@ import pandas as pd
 from datetime import datetime
 from aif360.metrics import ClassificationMetric
 from aif360.algorithms.inprocessing import PrejudiceRemover, AdversarialDebiasing, MetaFairClassifier, GerryFairClassifier
-from models import FairTransitionLossMLP, SimpleMLP, describe_metrics, APW_DP
+from models import (FairTransitionLossMLP, SimpleMLP, describe_metrics, AdaptativePriorityReweightingDP,
+                    AdaptativePriorityReweightingEOD, AdaptativePriorityReweightingEOP)
 from fitness_rules import *
 from dataset_readers import *
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -102,7 +103,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
 
     def objective(trial):
         # training
-        trial_model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, trial)
+        trial_model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=trial, fitness_rule=fitness_rule)
         trial_model = trial_model.fit(dataset_train.copy())
         result = eval(trial_model, dataset_val.copy(), unprivileged_groups, privileged_groups, fitness_rule, trial)
         tune_results_history.append(result)
@@ -120,9 +121,9 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
         study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS)
 
         # eval on test set
-        model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, study.best_params)
+        model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=study.best_params, fitness_rule=fitness_rule)
     else:
-        model = model_initializer(sens_attr, unprivileged_groups, privileged_groups)
+        model = model_initializer(sens_attr, unprivileged_groups, privileged_groups, fitness_rule=fitness_rule)
 
     model = model.fit(dataset_expanded_train)
     best_result = eval(model, dataset_test, unprivileged_groups, privileged_groups, fitness_rule, study.best_params)
@@ -148,7 +149,7 @@ def tune_model(dataset_reader, model_initializer, fitness_rule):
 
     return best_result
 
-def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     hidden_sizes = [100,100]
     if type(hyperparameters) is not dict:
         dropout = hyperparameters.suggest_float('dropout', 0.0, 0.2)
@@ -181,7 +182,7 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
                                       batch_size=64)
     return model
 
-def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     hidden_sizes = [100, 100]
     if type(hyperparameters) is not dict:
         dropout = hyperparameters.suggest_float('dropout', 0.0, 0.2)
@@ -199,7 +200,7 @@ def simple_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hy
                         batch_size=64)
     return model
 
-def prejudice_remover_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def prejudice_remover_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     if type(hyperparameters) is not dict:
         eta = hyperparameters.suggest_float('eta', 0.0, 50.0)
     else:
@@ -211,7 +212,7 @@ def prejudice_remover_initializer(sens_attr, unprivileged_groups, privileged_gro
         model = PrejudiceRemover(sensitive_attr=sens_attr)
     return model
 
-def meta_fair_classifier_sr_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def meta_fair_classifier_sr_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     if type(hyperparameters) is not dict:
         tau = hyperparameters.suggest_float('tau', 0.0, 2.0)
     else:
@@ -222,7 +223,7 @@ def meta_fair_classifier_sr_initializer(sens_attr, unprivileged_groups, privileg
         model = MetaFairClassifier(sensitive_attr=sens_attr, type='sr')
     return model
 
-def meta_fair_classifier_fdr_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def meta_fair_classifier_fdr_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     if type(hyperparameters) is not dict:
         tau = hyperparameters.suggest_float('tau', 0.0, 2.0)
     else:
@@ -236,7 +237,7 @@ def meta_fair_classifier_fdr_initializer(sens_attr, unprivileged_groups, privile
 
 
 
-def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     classifier_num_hidden_units = 100
     if type(hyperparameters) is not dict:
         adversary_loss_weight = hyperparameters.suggest_float('adversary_loss_weight', 0.0, 1.0)
@@ -253,7 +254,7 @@ def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged
     return model
 
 
-def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     classifier_num_hidden_units = 100
     if type(hyperparameters) is not dict:
         adversary_loss_weight = hyperparameters.suggest_float('adversary_loss_weight', 0.0, 1.0)
@@ -269,7 +270,7 @@ def adversarial_debiasing_initializer(sens_attr, unprivileged_groups, privileged
                                      'adv_debias_' + str(datetime.now().timestamp()), tf_old.Session())
     return model
 
-def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
     if type(hyperparameters) is not dict:
         C = hyperparameters.suggest_float('C', 0.0, 20.0)
         gamma = hyperparameters.suggest_categorical('gamma', [0.1, 0.01, 0.001])
@@ -282,7 +283,14 @@ def gerry_fair_classifier_initializer(sens_attr, unprivileged_groups, privileged
         model = GerryFairClassifier(fairness_def='FN')
     return model
 
-def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None):
+def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileged_groups, privileged_groups, hyperparameters=None, fitness_rule=None):
+    AdaptativePriorityReweighting = None
+    if fitness_rule is not None and fitness_rule.__name__ in ['mcc_parity', 'acc_parity']:
+        AdaptativePriorityReweighting = AdaptativePriorityReweightingDP
+    elif fitness_rule is not None and fitness_rule.__name__ in ['mcc_odds', 'acc_odds']:
+        AdaptativePriorityReweighting = AdaptativePriorityReweightingEOD
+    elif fitness_rule is not None and fitness_rule.__name__ in ['mcc_opportunity', 'acc_opportunity']:
+        AdaptativePriorityReweighting = AdaptativePriorityReweightingEOP
     if type(hyperparameters) is not dict:
         alpha = hyperparameters.suggest_float('alpha', 0.0, 10000.0)
         eta = hyperparameters.suggest_float('eta', 0.5, 3.0)
@@ -290,9 +298,9 @@ def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileg
         alpha = hyperparameters['alpha']
         eta = hyperparameters['eta']
     if hyperparameters is not None:
-        model = APW_DP(sensitive_attr=sens_attr, alpha=alpha, eta=eta)
+        model = AdaptativePriorityReweighting(sensitive_attr=sens_attr, alpha=alpha, eta=eta)
     else:
-        model = APW_DP(sensitive_attr=sens_attr)
+        model = AdaptativePriorityReweighting(sensitive_attr=sens_attr)
     return model
 
 
@@ -304,12 +312,12 @@ datasets = [
 ]
 
 rules = [
-    mcc_parity,
-    #mcc_odds,
-    #mcc_opportunity,
-    acc_parity,
-    #acc_odds,
-    #acc_opportunity
+    #mcc_parity,
+    mcc_odds,
+    mcc_opportunity,
+    #acc_parity,
+    acc_odds,
+    acc_opportunity
 ]
 
 methods = [
