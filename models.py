@@ -479,7 +479,6 @@ class AdaptativePriorityReweightingEOP(Transformer):
 
 
 def describe_metrics(metrics):
-    print("Fitness: {:6.4f}".format(metrics['fitness']))
     print("Overall accuracy: {:6.4f}".format(metrics['overall_acc']))
     print("F1 Score: {:6.4f}".format(metrics['f1_score']))
     print("Mathew Correlation Coefficient: {:6.4f}".format(metrics['MCC']))

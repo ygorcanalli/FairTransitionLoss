@@ -20,7 +20,7 @@ def describe_dataset(train=None, val=None, test=None):
     print(test.feature_names)
 
 
-def german_dataset_reader():
+def german_dataset_reader(shuffle=True):
     #label_map = {1.0: 'Good Credit', 2.0: 'Bad Credit'}
     #protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
     #data = GermanDataset(protected_attribute_names=['sex'],
@@ -28,10 +28,10 @@ def german_dataset_reader():
     #                    'protected_attribute_maps': protected_attribute_maps})
     data = GermanDataset()
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8], shuffle=True)
+     dataset_test) = data.split([0.8], shuffle=shuffle)
 
     (dataset_train,
-     dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+     dataset_val) = dataset_expanded_train.split([0.8], shuffle=shuffle)
     sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
@@ -44,7 +44,7 @@ def german_dataset_reader():
 
     return dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr
 
-def adult_dataset_reader():
+def adult_dataset_reader(shuffle=True):
     label_map = {1.0: '>50K', 0.0: '<=50K'}
     protected_attribute_maps = [{1.0: 'Male', 0.0: 'Female'}]
     data = AdultDataset(protected_attribute_names=['sex'],
@@ -53,10 +53,10 @@ def adult_dataset_reader():
                       privileged_classes=[['Male']], metadata={'label_map': label_map,
                                                                'protected_attribute_maps': protected_attribute_maps})
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8], shuffle=True)
+     dataset_test) = data.split([0.8], shuffle=shuffle)
 
     (dataset_train,
-    dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+    dataset_val) = dataset_expanded_train.split([0.8], shuffle=shuffle)
     sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
@@ -69,14 +69,14 @@ def adult_dataset_reader():
 
     return dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr
 
-def compas_dataset_reader():
+def compas_dataset_reader(shuffle=True):
 
     data = CompasDataset()
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8], shuffle=True)
+     dataset_test) = data.split([0.8], shuffle=shuffle)
 
     (dataset_train,
-     dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+     dataset_val) = dataset_expanded_train.split([0.8], shuffle=shuffle)
     sens_ind = 1
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 
@@ -89,14 +89,14 @@ def compas_dataset_reader():
 
     return dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr
 
-def bank_dataset_reader():
+def bank_dataset_reader(shuffle=True):
 
     data = BankDataset()
     (dataset_expanded_train,
-     dataset_test) = data.split([0.8], shuffle=True)
+     dataset_test) = data.split([0.8], shuffle=shuffle)
 
     (dataset_train,
-     dataset_val) = dataset_expanded_train.split([0.8], shuffle=True)
+     dataset_val) = dataset_expanded_train.split([0.8], shuffle=shuffle)
     sens_ind = 0
     sens_attr = dataset_train.protected_attribute_names[sens_ind]
 

@@ -18,7 +18,7 @@ from util import mathew_correlation_coefficient, f1_score
 from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
 
-N_TRIALS = 5
+N_TRIALS = 100
 N_JOBS = 5
 SAMPLER = TPESampler
 PRUNER = HyperbandPruner
@@ -42,12 +42,13 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, fitness_rule, h
         pos_ind = np.where(model.classes_ == dataset.favorable_label)[0][0]
         y_pred = (y_pred_prob[:, 1] > 0.5).astype(np.float64)
 
+        y_pred_mapped = y_pred.copy()
         # Map the dataset labels to back to their original values.
-        y_pred[y_pred == 0] = dataset.unfavorable_label
-        y_pred[y_pred == 1] = dataset.favorable_label
+        y_pred_mapped[y_pred == 0] = dataset.unfavorable_label
+        y_pred_mapped[y_pred == 1] = dataset.favorable_label
 
         dataset_pred = dataset.copy()
-        dataset_pred.labels = y_pred
+        dataset_pred.labels = y_pred_mapped
 
     except AttributeError:
         # aif360 inprocessing algorithm
@@ -305,17 +306,17 @@ def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileg
 
 
 datasets = [
-    adult_dataset_reader,
-    #bank_dataset_reader,
-    #compas_dataset_reader
+    #adult_dataset_reader,
+    #bank_dataset_reader
+    compas_dataset_reader
     #german_dataset_reader
 ]
 
 rules = [
-    #mcc_parity,
+    mcc_parity,
     mcc_odds,
     mcc_opportunity,
-    #acc_parity,
+    acc_parity,
     acc_odds,
     acc_opportunity
 ]
