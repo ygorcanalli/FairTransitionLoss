@@ -306,9 +306,9 @@ def adaptative_priority_reweighting_classifier_initializer(sens_attr, unprivileg
 
 
 datasets = [
-    #adult_dataset_reader,
+    adult_dataset_reader
     #bank_dataset_reader
-    compas_dataset_reader
+    #compas_dataset_reader
     #german_dataset_reader
 ]
 
@@ -322,10 +322,10 @@ rules = [
 ]
 
 methods = [
-    adaptative_priority_reweighting_classifier_initializer
+    #adaptative_priority_reweighting_classifier_initializer
     #meta_fair_classifier_sr_initializer,
     #gerry_fair_classifier_initializer,
-    #simple_mlp_initializer,
+    simple_mlp_initializer,
     #ftl_mlp_initializer,
     #adversarial_debiasing_initializer
     #prejudice_remover_initializer
