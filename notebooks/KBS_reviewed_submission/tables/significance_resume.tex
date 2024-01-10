@@ -3,35 +3,35 @@
  &  & Standard MLP (baseline) & Adversarial Debiasing & Prejudice Remover & Gerry Fair Classifier & Adaptative Priority Reweighting \\
 fitness_rule & dataset &  &  &  &  &  \\
 \midrule
-\multirow[t]{4}{*}{acc_odds} & Adult Income & \textbf{0.01} & \textbf{0.21} & \textbf{0.19} & \textbf{0.00} & 1.00 \\
- & Bank Marketing & 0.76 & \textbf{0.40} & 0.82 & 1.00 & 1.00 \\
- & Compas Recidivism & \textbf{0.01} & \textbf{0.45} & \textbf{0.00} & \textbf{0.01} & \textbf{0.00} \\
- & German Credit & 1.00 & \textbf{0.12} & 1.00 & 1.00 & 1.00 \\
-\cline{1-7}
-\multirow[t]{4}{*}{acc_opportunity} & Adult Income & 0.89 & 0.97 & 1.00 & \textbf{0.23} & 0.98 \\
- & Bank Marketing & 1.00 & \textbf{0.39} & 0.81 & 1.00 & 1.00 \\
- & Compas Recidivism & \textbf{0.01} & 0.78 & \textbf{0.00} & \textbf{0.10} & 1.00 \\
- & German Credit & 1.00 & 0.64 & 1.00 & 1.00 & 1.00 \\
-\cline{1-7}
-\multirow[t]{4}{*}{acc_parity} & Adult Income & \textbf{0.01} & \textbf{0.26} & \textbf{0.32} & \textbf{0.00} & 0.53 \\
- & Bank Marketing & \textbf{0.25} & 1.00 & 1.00 & 0.76 & 0.82 \\
- & Compas Recidivism & \textbf{0.00} & 1.00 & \textbf{0.10} & 1.00 & \textbf{0.00} \\
- & German Credit & 1.00 & \textbf{0.26} & 1.00 & 1.00 & 1.00 \\
-\cline{1-7}
-\multirow[t]{4}{*}{mcc_odds} & Adult Income & \textbf{0.03} & \textbf{0.28} & \textbf{0.42} & \textbf{0.00} & \textbf{0.00} \\
- & Bank Marketing & \textbf{0.46} & \textbf{0.18} & \textbf{0.12} & \textbf{0.02} & \textbf{0.18} \\
- & Compas Recidivism & \textbf{0.01} & 0.58 & \textbf{0.00} & \textbf{0.07} & \textbf{0.00} \\
- & German Credit & 1.00 & \textbf{0.07} & 1.00 & \textbf{0.31} & 1.00 \\
+\multirow[t]{4}{*}{mcc_parity} & Adult Income & \textbf{0.00} & \textbf{0.15} & 1.00 & \textbf{0.00} & 1.00 \\
+ & Bank Marketing & \textbf{0.01} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} \\
+ & Compas Recidivism & \textbf{0.01} & \textbf{0.25} & \textbf{0.00} & \textbf{0.02} & \textbf{0.00} \\
+ & German Credit & \textbf{0.28} & \textbf{0.30} & \textbf{0.39} & \textbf{0.21} & \textbf{0.28} \\
 \cline{1-7}
 \multirow[t]{4}{*}{mcc_opportunity} & Adult Income & \textbf{0.01} & \textbf{0.00} & \textbf{0.05} & \textbf{0.00} & 0.93 \\
  & Bank Marketing & 0.81 & \textbf{0.18} & \textbf{0.24} & \textbf{0.09} & 0.77 \\
  & Compas Recidivism & \textbf{0.00} & 1.00 & \textbf{0.00} & 0.66 & 1.00 \\
  & German Credit & 1.00 & \textbf{0.23} & 0.84 & 0.78 & 0.76 \\
 \cline{1-7}
-\multirow[t]{4}{*}{mcc_parity} & Adult Income & \textbf{0.00} & \textbf{0.15} & 1.00 & \textbf{0.00} & 1.00 \\
- & Bank Marketing & \textbf{0.01} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} \\
- & Compas Recidivism & \textbf{0.01} & \textbf{0.25} & \textbf{0.00} & \textbf{0.02} & \textbf{0.00} \\
- & German Credit & \textbf{0.28} & \textbf{0.30} & \textbf{0.39} & \textbf{0.21} & \textbf{0.28} \\
+\multirow[t]{4}{*}{mcc_odds} & Adult Income & \textbf{0.03} & \textbf{0.28} & \textbf{0.42} & \textbf{0.00} & \textbf{0.00} \\
+ & Bank Marketing & \textbf{0.46} & \textbf{0.18} & \textbf{0.12} & \textbf{0.02} & \textbf{0.18} \\
+ & Compas Recidivism & \textbf{0.01} & 0.58 & \textbf{0.00} & \textbf{0.07} & \textbf{0.00} \\
+ & German Credit & 1.00 & \textbf{0.07} & 1.00 & \textbf{0.31} & 1.00 \\
+\cline{1-7}
+\multirow[t]{4}{*}{acc_parity} & Adult Income & \textbf{0.01} & \textbf{0.26} & \textbf{0.32} & \textbf{0.00} & 0.53 \\
+ & Bank Marketing & \textbf{0.25} & 1.00 & 1.00 & 0.76 & 0.82 \\
+ & Compas Recidivism & \textbf{0.00} & 1.00 & \textbf{0.10} & 1.00 & \textbf{0.00} \\
+ & German Credit & 1.00 & \textbf{0.26} & 1.00 & 1.00 & 1.00 \\
+\cline{1-7}
+\multirow[t]{4}{*}{acc_opportunity} & Adult Income & 0.89 & 0.97 & 1.00 & \textbf{0.23} & 0.98 \\
+ & Bank Marketing & 1.00 & \textbf{0.39} & 0.81 & 1.00 & 1.00 \\
+ & Compas Recidivism & \textbf{0.01} & 0.78 & \textbf{0.00} & \textbf{0.10} & 1.00 \\
+ & German Credit & 1.00 & 0.64 & 1.00 & 1.00 & 1.00 \\
+\cline{1-7}
+\multirow[t]{4}{*}{acc_odds} & Adult Income & \textbf{0.01} & \textbf{0.21} & \textbf{0.19} & \textbf{0.00} & 1.00 \\
+ & Bank Marketing & 0.76 & \textbf{0.40} & 0.82 & 1.00 & 1.00 \\
+ & Compas Recidivism & \textbf{0.01} & \textbf{0.45} & \textbf{0.00} & \textbf{0.01} & \textbf{0.00} \\
+ & German Credit & 1.00 & \textbf{0.12} & 1.00 & 1.00 & 1.00 \\
 \cline{1-7}
 \bottomrule
 \end{tabular}
