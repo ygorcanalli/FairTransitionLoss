@@ -73,7 +73,7 @@ def eval(model, dataset, unprivileged_groups, privileged_groups, hyperparameters
     return flatten(metrics)
 
 def train_model(dataset_reader, hyperparameters):
-    dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr = dataset_reader(shuffle=False)
+    dataset_expanded_train, dataset_train, dataset_val, dataset_test, unprivileged_groups, privileged_groups, sens_attr = dataset_reader(shuffle=True)
 
     scaler = StandardScaler()
     dataset_train.features = scaler.fit_transform(dataset_train.features)
@@ -118,10 +118,10 @@ def ftl_mlp_initializer(sens_attr, unprivileged_groups, privileged_groups, hyper
     return model
 
 datasets = [
-    #adult_dataset_reader,
-    bank_dataset_reader
-    #compas_dataset_reader,
-    #german_dataset_reader
+    adult_dataset_reader,
+    bank_dataset_reader,
+    compas_dataset_reader,
+    german_dataset_reader
 ]
 
 results = []
